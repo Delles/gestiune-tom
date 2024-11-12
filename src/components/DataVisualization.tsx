@@ -14,14 +14,14 @@ import {
     Bar,
     LineChart,
     Line,
-    AreaChart,
-    Area,
     XAxis,
     YAxis,
     CartesianGrid,
     Tooltip,
     Legend,
     ResponsiveContainer,
+    AreaChart,
+    Area,
 } from "recharts";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
@@ -97,20 +97,77 @@ export default function DataVisualization({
                 <CardContent className="h-[400px]">
                     <ResponsiveContainer width="100%" height="100%">
                         <BarChart data={chartData}>
-                            <CartesianGrid strokeDasharray="3 3" />
-                            <XAxis dataKey="date" />
-                            <YAxis />
-                            <Tooltip />
+                            <defs>
+                                <linearGradient
+                                    id="colorCash"
+                                    x1="0"
+                                    y1="0"
+                                    x2="0"
+                                    y2="1"
+                                >
+                                    <stop
+                                        offset="5%"
+                                        stopColor="#4f46e5"
+                                        stopOpacity={0.8}
+                                    />
+                                    <stop
+                                        offset="95%"
+                                        stopColor="#4f46e5"
+                                        stopOpacity={0.4}
+                                    />
+                                </linearGradient>
+                                <linearGradient
+                                    id="colorCard"
+                                    x1="0"
+                                    y1="0"
+                                    x2="0"
+                                    y2="1"
+                                >
+                                    <stop
+                                        offset="5%"
+                                        stopColor="#10b981"
+                                        stopOpacity={0.8}
+                                    />
+                                    <stop
+                                        offset="95%"
+                                        stopColor="#10b981"
+                                        stopOpacity={0.4}
+                                    />
+                                </linearGradient>
+                            </defs>
+                            <CartesianGrid
+                                strokeDasharray="3 3"
+                                stroke="#e5e7eb"
+                            />
+                            <XAxis
+                                dataKey="date"
+                                tick={{ fill: "#6b7280" }}
+                                tickFormatter={(value) =>
+                                    format(new Date(value), "dd MMM")
+                                }
+                            />
+                            <YAxis tick={{ fill: "#6b7280" }} />
+                            <Tooltip
+                                contentStyle={{
+                                    backgroundColor: "#ffffff",
+                                    borderRadius: "8px",
+                                    border: "1px solid #e5e7eb",
+                                    boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
+                                }}
+                                itemStyle={{ color: "#1f2937" }}
+                            />
                             <Legend />
                             <Bar
                                 dataKey="cashSales"
                                 name="Numerar"
-                                fill="#4f46e5"
+                                fill="url(#colorCash)"
+                                radius={[4, 4, 0, 0]}
                             />
                             <Bar
                                 dataKey="cardSales"
                                 name="Card"
-                                fill="#10b981"
+                                fill="url(#colorCard)"
+                                radius={[4, 4, 0, 0]}
                             />
                         </BarChart>
                     </ResponsiveContainer>
@@ -125,56 +182,63 @@ export default function DataVisualization({
                 <CardContent className="h-[400px]">
                     <ResponsiveContainer width="100%" height="100%">
                         <LineChart data={chartData}>
-                            <CartesianGrid strokeDasharray="3 3" />
-                            <XAxis dataKey="date" />
-                            <YAxis />
-                            <Tooltip />
+                            <defs>
+                                <linearGradient
+                                    id="colorTotal"
+                                    x1="0"
+                                    y1="0"
+                                    x2="0"
+                                    y2="1"
+                                >
+                                    <stop
+                                        offset="5%"
+                                        stopColor="#8b5cf6"
+                                        stopOpacity={0.8}
+                                    />
+                                    <stop
+                                        offset="95%"
+                                        stopColor="#8b5cf6"
+                                        stopOpacity={0.2}
+                                    />
+                                </linearGradient>
+                            </defs>
+                            <CartesianGrid
+                                strokeDasharray="3 3"
+                                stroke="#e5e7eb"
+                            />
+                            <XAxis
+                                dataKey="date"
+                                tick={{ fill: "#6b7280" }}
+                                tickFormatter={(value) =>
+                                    format(new Date(value), "dd MMM")
+                                }
+                            />
+                            <YAxis tick={{ fill: "#6b7280" }} />
+                            <Tooltip
+                                contentStyle={{
+                                    backgroundColor: "#ffffff",
+                                    borderRadius: "8px",
+                                    border: "1px solid #e5e7eb",
+                                    boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
+                                }}
+                                itemStyle={{ color: "#1f2937" }}
+                            />
                             <Legend />
                             <Line
                                 type="monotone"
                                 dataKey="totalSales"
                                 name="Vânzări Totale"
                                 stroke="#8b5cf6"
-                                strokeWidth={2}
+                                strokeWidth={3}
+                                dot={{ fill: "#8b5cf6", strokeWidth: 2 }}
+                                activeDot={{ r: 8 }}
                             />
                         </LineChart>
                     </ResponsiveContainer>
                 </CardContent>
             </Card>
 
-            {/* Stock Movement */}
-            <Card>
-                <CardHeader>
-                    <CardTitle>Mișcare Stoc și Intrări</CardTitle>
-                </CardHeader>
-                <CardContent className="h-[400px]">
-                    <ResponsiveContainer width="100%" height="100%">
-                        <AreaChart data={chartData}>
-                            <CartesianGrid strokeDasharray="3 3" />
-                            <XAxis dataKey="date" />
-                            <YAxis />
-                            <Tooltip />
-                            <Legend />
-                            <Area
-                                type="monotone"
-                                dataKey="balance"
-                                name="Sold"
-                                stroke="#ef4444"
-                                fill="#fee2e2"
-                            />
-                            <Area
-                                type="monotone"
-                                dataKey="entries"
-                                name="Intrări"
-                                stroke="#f59e0b"
-                                fill="#fef3c7"
-                            />
-                        </AreaChart>
-                    </ResponsiveContainer>
-                </CardContent>
-            </Card>
-
-            {/* Update the supplier distribution card */}
+            {/* Supplier Distribution */}
             <Card>
                 <CardHeader>
                     <CardTitle>Distribuție Intrări pe Furnizori</CardTitle>
@@ -185,21 +249,164 @@ export default function DataVisualization({
                 <CardContent className="h-[400px]">
                     <ResponsiveContainer width="100%" height="100%">
                         <BarChart data={supplierData} layout="vertical">
-                            <CartesianGrid strokeDasharray="3 3" />
-                            <XAxis type="number" />
+                            <defs>
+                                <linearGradient
+                                    id="colorSupplier"
+                                    x1="0"
+                                    y1="0"
+                                    x2="1"
+                                    y2="0"
+                                >
+                                    <stop
+                                        offset="5%"
+                                        stopColor="#6366f1"
+                                        stopOpacity={0.8}
+                                    />
+                                    <stop
+                                        offset="95%"
+                                        stopColor="#6366f1"
+                                        stopOpacity={0.4}
+                                    />
+                                </linearGradient>
+                            </defs>
+                            <CartesianGrid
+                                strokeDasharray="3 3"
+                                stroke="#e5e7eb"
+                            />
+                            <XAxis type="number" tick={{ fill: "#6b7280" }} />
                             <YAxis
                                 type="category"
                                 dataKey="supplier"
                                 width={150}
+                                tick={{ fill: "#6b7280" }}
                             />
-                            <Tooltip />
+                            <Tooltip
+                                contentStyle={{
+                                    backgroundColor: "#ffffff",
+                                    borderRadius: "8px",
+                                    border: "1px solid #e5e7eb",
+                                    boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
+                                }}
+                                itemStyle={{ color: "#1f2937" }}
+                            />
                             <Legend />
                             <Bar
                                 dataKey="total"
                                 name="Valoare Totală"
-                                fill="#6366f1"
+                                fill="url(#colorSupplier)"
+                                radius={[0, 4, 4, 0]}
                             />
                         </BarChart>
+                    </ResponsiveContainer>
+                </CardContent>
+            </Card>
+
+            {/* Stock Movement */}
+            <Card>
+                <CardHeader>
+                    <CardTitle>Mișcare Stoc, Intrări și Ieșiri</CardTitle>
+                </CardHeader>
+                <CardContent className="h-[400px]">
+                    <ResponsiveContainer width="100%" height="100%">
+                        <AreaChart data={chartData}>
+                            <defs>
+                                <linearGradient
+                                    id="colorBalance"
+                                    x1="0"
+                                    y1="0"
+                                    x2="0"
+                                    y2="1"
+                                >
+                                    <stop
+                                        offset="5%"
+                                        stopColor="#3b82f6"
+                                        stopOpacity={0.8}
+                                    />
+                                    <stop
+                                        offset="95%"
+                                        stopColor="#3b82f6"
+                                        stopOpacity={0.2}
+                                    />
+                                </linearGradient>
+                                <linearGradient
+                                    id="colorEntries"
+                                    x1="0"
+                                    y1="0"
+                                    x2="0"
+                                    y2="1"
+                                >
+                                    <stop
+                                        offset="5%"
+                                        stopColor="#10b981"
+                                        stopOpacity={0.8}
+                                    />
+                                    <stop
+                                        offset="95%"
+                                        stopColor="#10b981"
+                                        stopOpacity={0.2}
+                                    />
+                                </linearGradient>
+                                <linearGradient
+                                    id="colorSales"
+                                    x1="0"
+                                    y1="0"
+                                    x2="0"
+                                    y2="1"
+                                >
+                                    <stop
+                                        offset="5%"
+                                        stopColor="#f59e0b"
+                                        stopOpacity={0.8}
+                                    />
+                                    <stop
+                                        offset="95%"
+                                        stopColor="#f59e0b"
+                                        stopOpacity={0.2}
+                                    />
+                                </linearGradient>
+                            </defs>
+                            <CartesianGrid strokeDasharray="3 3" />
+                            <XAxis
+                                dataKey="date"
+                                tick={{ fill: "#6b7280" }}
+                                tickFormatter={(value) =>
+                                    format(new Date(value), "dd MMM")
+                                }
+                            />
+                            <YAxis tick={{ fill: "#6b7280" }} />
+                            <Tooltip
+                                contentStyle={{
+                                    backgroundColor: "#ffffff",
+                                    borderRadius: "8px",
+                                }}
+                                itemStyle={{ color: "#1f2937" }}
+                            />
+                            <Legend />
+                            <Area
+                                type="monotone"
+                                dataKey="balance"
+                                name="Sold"
+                                stroke="#3b82f6"
+                                fillOpacity={1}
+                                fill="url(#colorBalance)"
+                            />
+                            <Area
+                                type="monotone"
+                                dataKey="entries"
+                                name="Intrări"
+                                stroke="#10b981"
+                                fillOpacity={1}
+                                fill="url(#colorEntries)"
+                            />
+                            <Area
+                                type="monotone"
+                                dataKey="totalSales"
+                                name="Ieșiri"
+                                stroke="#f59e0b"
+                                fillOpacity={1}
+                                fill="url(#colorSales)"
+                            />
+                        </AreaChart>
                     </ResponsiveContainer>
                 </CardContent>
             </Card>
