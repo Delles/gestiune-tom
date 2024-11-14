@@ -59,6 +59,7 @@ export default function DailyManagementReport() {
                     merchandiseValue: 0,
                     cashValue: 0,
                     cardValue: 0,
+                    "Nr crt": sales.length + 1,
                 },
             ]);
         }
@@ -118,7 +119,10 @@ export default function DailyManagementReport() {
                 companyName,
                 previousBalance,
                 entries,
-                sales,
+                sales: sales.map((sale, index) => ({
+                    ...sale,
+                    "Nr crt": index + 1,
+                })),
             };
 
             const pdfBlob = await generateReportPDF(reportData);
@@ -160,7 +164,10 @@ export default function DailyManagementReport() {
                 companyName,
                 previousBalance,
                 entries,
-                sales,
+                sales: sales.map((sale, index) => ({
+                    ...sale,
+                    "Nr crt": index + 1,
+                })),
             };
 
             const pdfBlob = await generateReportPDF(reportData);
