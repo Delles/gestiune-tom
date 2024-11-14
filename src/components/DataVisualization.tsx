@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
     Table,
@@ -32,6 +32,18 @@ import {
 import { ChevronDown } from "lucide-react";
 import { format } from "date-fns";
 import { ro } from "date-fns/locale";
+import { Button } from "@/components/ui/button";
+import { Eye } from "lucide-react";
+import { generateReportPDF } from "@/lib/generatePDF";
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 export default function DataVisualization({
     data,
@@ -413,9 +425,102 @@ export default function DataVisualization({
         </div>
     );
 
+    const [dialogOpen, setDialogOpen] = useState(false);
+    const [dialogMessage, setDialogMessage] = useState("");
+    const [companyName, setCompanyName] = useState("");
+
+    // Add new function to handle PDF generation
+    const handleGenerateReport = async (
+        entry: ProcessedEntry,
+        action: "save" | "preview"
+    ) => {
+        try {
+            if (!companyName) {
+                setDialogMessage("Vă rugăm să introduceți numele companiei.");
+                setDialogOpen(true);
+                return;
+            }
+
+            const reportData = {
+                date: new Date(entry.date),
+                companyName,
+                previousBalance: entry.initialValue,
+                entries: entry.entries.map((item, index) => ({
+                    id: index,
+                    documentNumber: item.documentNumber,
+                    explanation: item.explanation,
+                    merchandiseValue: item.merchandiseValue,
+                })),
+                sales: entry.sales.map((item, index) => ({
+                    id: index,
+                    documentNumber: item.documentNumber,
+                    explanation: item.explanation,
+                    merchandiseValue: item.merchandiseValue,
+                    cashValue: item.cashValue,
+                    cardValue: item.cardValue,
+                    "Nr crt": index + 1,
+                })),
+            };
+
+            const pdfBlob = await generateReportPDF(reportData);
+
+            if (action === "preview") {
+                const pdfUrl = URL.createObjectURL(pdfBlob);
+                window.open(pdfUrl, "_blank");
+                setTimeout(() => URL.revokeObjectURL(pdfUrl), 100);
+            } else {
+                if (window.showSaveFilePicker) {
+                    const fileHandle = await window.showSaveFilePicker({
+                        suggestedName: `raport_${format(
+                            new Date(entry.date),
+                            "dd_MM_yyyy"
+                        )}.pdf`,
+                        types: [
+                            {
+                                description: "PDF Document",
+                                accept: { "application/pdf": [".pdf"] },
+                            },
+                        ],
+                    });
+
+                    const writableStream = await fileHandle.createWritable();
+                    await writableStream.write(pdfBlob);
+                    await writableStream.close();
+
+                    setDialogMessage("Raportul a fost salvat cu succes!");
+                    setDialogOpen(true);
+                } else {
+                    setDialogMessage(
+                        "Funcția de salvare nu este suportată în acest browser."
+                    );
+                    setDialogOpen(true);
+                }
+            }
+        } catch (error) {
+            console.error("Error generating PDF:", error);
+            setDialogMessage("A apărut o eroare la generarea raportului.");
+            setDialogOpen(true);
+        }
+    };
+
     return (
         <div className="space-y-8">
-            <h1 className="text-3xl font-bold text-center">Date Procesate</h1>
+            <div className="space-y-4">
+                <h1 className="text-3xl font-bold text-center">
+                    Date Procesate
+                </h1>
+
+                {/* Add Company Name Input */}
+                <div className="max-w-md mx-auto">
+                    <Label htmlFor="companyName">Numele Companiei</Label>
+                    <Input
+                        id="companyName"
+                        value={companyName}
+                        onChange={(e) => setCompanyName(e.target.value)}
+                        placeholder="Introduceți numele companiei"
+                    />
+                </div>
+            </div>
 
             <Tabs defaultValue="graphs" className="w-full">
                 <TabsList className="grid w-full grid-cols-2">
@@ -643,6 +748,34 @@ export default function DataVisualization({
                                                     </p>
                                                 </div>
                                             </div>
+
+                                            {/* Add Report Actions */}
+                                            <div className="flex flex-col sm:flex-row gap-4 pt-4 border-t">
+                                                <Button
+                                                    onClick={() =>
+                                                        handleGenerateReport(
+                                                            entry,
+                                                            "save"
+                                                        )
+                                                    }
+                                                    className="w-full sm:w-auto"
+                                                >
+                                                    Salvează Raportul
+                                                </Button>
+                                                <Button
+                                                    variant="secondary"
+                                                    onClick={() =>
+                                                        handleGenerateReport(
+                                                            entry,
+                                                            "preview"
+                                                        )
+                                                    }
+                                                    className="w-full sm:w-auto"
+                                                >
+                                                    <Eye className="mr-2 h-4 w-4" />
+                                                    Previzualizare PDF
+                                                </Button>
+                                            </div>
                                         </CardContent>
                                     </CollapsibleContent>
                                 </Card>
@@ -651,6 +784,16 @@ export default function DataVisualization({
                     )}
                 </TabsContent>
             </Tabs>
+
+            {/* Add Dialog Component */}
+            <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Notificare</DialogTitle>
+                        <DialogDescription>{dialogMessage}</DialogDescription>
+                    </DialogHeader>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }
