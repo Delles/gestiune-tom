@@ -124,6 +124,9 @@ async function processEntriesFile(file: File): Promise<ExtractedEntry[]> {
             const valoareStr = row[headerMap["Total vanzare cu TVA"]] as
                 | string
                 | number;
+            const valoareIntrareStr = row[
+                headerMap["Total achizitie cu TVA"]
+            ] as string | number;
 
             // Parse and validate date
             const parsedDate = parseDate(dateStr as string);
@@ -155,6 +158,14 @@ async function processEntriesFile(file: File): Promise<ExtractedEntry[]> {
                 documentNumber: document,
                 explanation: explanation,
                 merchandiseValue: valoare,
+                purchaseValue:
+                    typeof valoareIntrareStr === "number"
+                        ? valoareIntrareStr
+                        : parseFloat(
+                              valoareIntrareStr
+                                  ?.toString()
+                                  ?.replace(",", ".") || "0"
+                          ),
                 isEntry: true,
                 cashValue: undefined,
                 cardValue: undefined,
@@ -270,8 +281,8 @@ async function processSalesFile(file: File): Promise<ExtractedEntry[]> {
             const updatedDocumentNumber = documentValue - 2;
             const documentNumber = `RF ${updatedDocumentNumber}`;
 
-            // Update explanation to include "Raport fiscal z {documentValue}"
-            const updatedExplanation = `Raport fiscal z ${documentValue}`;
+            // Update explanation to include "Raport fiscal Z {documentValue}"
+            const updatedExplanation = `Raport fiscal Z ${documentValue}`;
 
             // Determine payment type
             let cashValue = 0;
@@ -350,6 +361,7 @@ function combineDataByDate(
                 documentNumber: item.documentNumber,
                 explanation: item.explanation,
                 merchandiseValue: item.merchandiseValue,
+                purchaseValue: item.purchaseValue || 0,
             });
             dateEntry.totalValue += item.merchandiseValue;
         } else {

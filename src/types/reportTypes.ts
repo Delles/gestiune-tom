@@ -1,57 +1,49 @@
-export interface Entry {
-    id: number;
+export interface BaseEntry {
     documentNumber: string;
     explanation: string;
     merchandiseValue: number;
 }
 
-export interface SaleEntry extends Entry {
-    cashValue: number;
-    cardValue: number;
-}
-
-export interface ReportData {
-    date: Date;
-    companyName: string;
-    previousBalance: number;
-    entries: Entry[];
-    sales: SaleEntry[];
-}
-
-export interface ExtractedEntry {
+export interface ExtractedEntry extends BaseEntry {
     date: string;
-    documentNumber: string;
-    explanation: string;
-    merchandiseValue: number;
+    purchaseValue?: number;
     isEntry: boolean;
     cashValue?: number;
     cardValue?: number;
 }
 
+export interface EntryItem extends BaseEntry {
+    "Nr crt": number;
+    purchaseValue: number;
+}
+
+export interface SaleItem extends BaseEntry {
+    "Nr crt": number;
+    cashValue: number;
+    cardValue: number;
+    purchaseValue?: number;
+}
+
 export interface ProcessedEntry {
     date: string;
     initialValue: number;
-    entries: {
-        "Nr crt": number;
-        documentNumber: string;
-        explanation: string;
-        merchandiseValue: number;
-    }[];
-    sales: {
-        "Nr crt": number;
-        documentNumber: string;
-        explanation: string;
-        cashValue: number;
-        cardValue: number;
-        merchandiseValue: number;
-    }[];
+    finalValue: number;
+    entries: EntryItem[];
+    sales: SaleItem[];
     totalValue: number;
     totalSales: number;
-    finalValue: number;
 }
 
 export interface ExtractedExcelData {
     entries: ExtractedEntry[];
     sales: ExtractedEntry[];
     processedEntries: ProcessedEntry[];
+}
+
+export interface ReportData {
+    date: Date;
+    companyName: string;
+    previousBalance: number;
+    entries: BaseEntry[];
+    sales: SaleItem[];
 }

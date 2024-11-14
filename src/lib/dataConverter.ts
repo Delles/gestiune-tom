@@ -8,14 +8,13 @@ export function convertProcessedEntryToReportData(
         date: new Date(processedEntry.date.split(".").reverse().join("-")),
         companyName,
         previousBalance: processedEntry.initialValue,
-        entries: processedEntry.entries.map((entry, index) => ({
-            id: index + 1,
+        entries: processedEntry.entries.map((entry) => ({
             documentNumber: entry.documentNumber,
             explanation: entry.explanation,
             merchandiseValue: entry.merchandiseValue,
         })),
-        sales: processedEntry.sales.map((sale, index) => ({
-            id: index + 1,
+        sales: processedEntry.sales.map((sale) => ({
+            "Nr crt": sale["Nr crt"],
             documentNumber: sale.documentNumber,
             explanation: sale.explanation,
             merchandiseValue: sale.merchandiseValue,

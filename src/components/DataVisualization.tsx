@@ -48,7 +48,7 @@ export default function DataVisualization({
         entries: entry.totalValue,
     }));
 
-    // Add this new data preparation logic after the existing chartData preparation
+    // Update the supplier data preparation logic
     const supplierData = React.useMemo(() => {
         const supplierTotals = new Map<string, number>();
 
@@ -57,7 +57,7 @@ export default function DataVisualization({
                 const currentTotal = supplierTotals.get(item.explanation) || 0;
                 supplierTotals.set(
                     item.explanation,
-                    currentTotal + item.merchandiseValue
+                    currentTotal + (item.purchaseValue || 0)
                 );
             });
         });
@@ -67,7 +67,7 @@ export default function DataVisualization({
                 supplier,
                 total,
             }))
-            .sort((a, b) => b.total - a.total); // Sort by total value descending
+            .sort((a, b) => b.total - a.total);
     }, [data]);
 
     // Calculate the timespan
