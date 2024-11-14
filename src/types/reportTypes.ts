@@ -47,3 +47,14 @@ export interface ReportData {
     entries: BaseEntry[];
     sales: SaleItem[];
 }
+
+export interface Entry extends BaseEntry {
+    id: number;
+}
+
+export interface SaleEntry extends BaseEntry {
+    id: number;
+    cashValue: number;
+    cardValue: number;
+    "Nr crt"?: number;
+}
