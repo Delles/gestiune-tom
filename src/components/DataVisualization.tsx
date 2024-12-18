@@ -42,13 +42,13 @@ import {
     DialogHeader,
     DialogTitle,
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 
 export default function DataVisualization({
     data,
+    companyName,
 }: {
     data: ExtractedExcelData;
+    companyName: string;
 }) {
     // Prepare data for charts
     const chartData = data.processedEntries.map((entry) => ({
@@ -427,7 +427,6 @@ export default function DataVisualization({
 
     const [dialogOpen, setDialogOpen] = useState(false);
     const [dialogMessage, setDialogMessage] = useState("");
-    const [companyName, setCompanyName] = useState("");
 
     // Add new function to handle PDF generation
     const handleGenerateReport = async (
@@ -504,28 +503,27 @@ export default function DataVisualization({
     };
 
     return (
-        <div className="space-y-8">
+        <div className="space-y-8 p-6 bg-gradient-to-br from-gray-50 to-white rounded-xl shadow-lg">
             <div className="space-y-4">
-                <h1 className="text-3xl font-bold text-center">
-                    Date Procesate
+                <h1 className="text-4xl font-bold text-center text-gray-800 bg-clip-text text-transparent bg-gradient-to-r from-primary to-purple-600">
+                    Vizualizare Date
                 </h1>
-
-                {/* Add Company Name Input */}
-                <div className="max-w-md mx-auto">
-                    <Label htmlFor="companyName">Numele Companiei</Label>
-                    <Input
-                        id="companyName"
-                        value={companyName}
-                        onChange={(e) => setCompanyName(e.target.value)}
-                        placeholder="Introduceți numele companiei"
-                    />
-                </div>
             </div>
 
             <Tabs defaultValue="graphs" className="w-full">
-                <TabsList className="grid w-full grid-cols-2">
-                    <TabsTrigger value="graphs">Grafice</TabsTrigger>
-                    <TabsTrigger value="reports">Rapoarte</TabsTrigger>
+                <TabsList className="grid w-full grid-cols-2 bg-white p-1 rounded-lg gap-2 shadow-sm backdrop-blur-sm bg-opacity-80">
+                    <TabsTrigger
+                        value="graphs"
+                        className="px-8 py-3 text-lg font-medium transition-all duration-200 ease-in-out rounded-md data-[state=active]:bg-primary data-[state=active]:text-primary-foreground hover:bg-gray-100 data-[state=active]:hover:bg-primary/90"
+                    >
+                        Grafice
+                    </TabsTrigger>
+                    <TabsTrigger
+                        value="reports"
+                        className="px-8 py-3 text-lg font-medium transition-all duration-200 ease-in-out rounded-md data-[state=active]:bg-primary data-[state=active]:text-primary-foreground hover:bg-gray-100 data-[state=active]:hover:bg-primary/90"
+                    >
+                        Rapoarte
+                    </TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="graphs">
