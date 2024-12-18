@@ -9,6 +9,7 @@ interface AutoTableCell {
     styles?: {
         fontStyle?: string;
         fillColor?: [number, number, number];
+        fontSize?: number;
     };
 }
 
@@ -290,13 +291,39 @@ export const generateReportPDF = async (data: ReportData): Promise<Blob> => {
                 {
                     content: formatNumber(finalBalance),
                     styles: {
-                        fillColor: [200, 200, 200], // Light gray for final balance
+                        fillColor: [200, 200, 200],
                         fontStyle: "bold",
+                        fontSize: 12,
                     },
                 },
             ],
         ],
         ...commonStyles,
+        columnStyles: {
+            0: { cellWidth: tableWidth * 0.7 },
+            1: { cellWidth: tableWidth * 0.3, halign: "right" },
+        },
+        didDrawCell: (data) => {
+            drawTableBorders(data);
+
+            if (data.section === "head" || data.section === "body") {
+                const doc = data.doc as jsPDF;
+                doc.setDrawColor(200);
+                doc.setLineWidth(0.5);
+                if (
+                    data.cell.x ===
+                    data.doc.internal.pageSize.width - tableWidth * 0.3 - 20
+                ) {
+                    doc.line(
+                        data.cell.x,
+                        data.cell.y,
+                        data.cell.x,
+                        data.cell.y + data.cell.height
+                    );
+                }
+            }
+        },
+        tableWidth: 170,
     });
 
     // Add verification line
