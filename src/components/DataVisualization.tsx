@@ -1,14 +1,7 @@
-import React, { useState } from "react";
+import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
-} from "@/components/ui/table";
-import { ProcessedEntry, ExtractedExcelData } from "@/types/reportTypes";
+
+import { ExtractedExcelData } from "@/types/reportTypes";
 import {
     BarChart,
     Bar,
@@ -23,29 +16,12 @@ import {
     AreaChart,
     Area,
 } from "recharts";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-    Collapsible,
-    CollapsibleContent,
-    CollapsibleTrigger,
-} from "@/components/ui/collapsible";
-import { ChevronDown } from "lucide-react";
+
 import { format } from "date-fns";
 import { ro } from "date-fns/locale";
-import { Button } from "@/components/ui/button";
-import { Eye } from "lucide-react";
-import { generateReportPDF } from "@/lib/generatePDF";
-import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogHeader,
-    DialogTitle,
-} from "@/components/ui/dialog";
 
 export default function DataVisualization({
     data,
-    companyName,
 }: {
     data: ExtractedExcelData;
     companyName: string;
@@ -96,412 +72,6 @@ export default function DataVisualization({
         };
     }, [data]);
 
-    // Add charts section before the detailed cards
-    const ChartsSection = () => (
-        <div className="space-y-8 mb-12">
-            {/* Daily Sales Comparison */}
-            <Card>
-                <CardHeader>
-                    <CardTitle>
-                        Comparație Vânzări Zilnice (Numerar vs Card)
-                    </CardTitle>
-                </CardHeader>
-                <CardContent className="h-[400px]">
-                    <ResponsiveContainer width="100%" height="100%">
-                        <BarChart data={chartData}>
-                            <defs>
-                                <linearGradient
-                                    id="colorCash"
-                                    x1="0"
-                                    y1="0"
-                                    x2="0"
-                                    y2="1"
-                                >
-                                    <stop
-                                        offset="5%"
-                                        stopColor="#4f46e5"
-                                        stopOpacity={0.8}
-                                    />
-                                    <stop
-                                        offset="95%"
-                                        stopColor="#4f46e5"
-                                        stopOpacity={0.4}
-                                    />
-                                </linearGradient>
-                                <linearGradient
-                                    id="colorCard"
-                                    x1="0"
-                                    y1="0"
-                                    x2="0"
-                                    y2="1"
-                                >
-                                    <stop
-                                        offset="5%"
-                                        stopColor="#10b981"
-                                        stopOpacity={0.8}
-                                    />
-                                    <stop
-                                        offset="95%"
-                                        stopColor="#10b981"
-                                        stopOpacity={0.4}
-                                    />
-                                </linearGradient>
-                            </defs>
-                            <CartesianGrid
-                                strokeDasharray="3 3"
-                                stroke="#e5e7eb"
-                            />
-                            <XAxis
-                                dataKey="date"
-                                tick={{ fill: "#6b7280" }}
-                                tickFormatter={(value) =>
-                                    format(new Date(value), "dd MMM")
-                                }
-                            />
-                            <YAxis tick={{ fill: "#6b7280" }} />
-                            <Tooltip
-                                contentStyle={{
-                                    backgroundColor: "#ffffff",
-                                    borderRadius: "8px",
-                                    border: "1px solid #e5e7eb",
-                                    boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
-                                }}
-                                itemStyle={{ color: "#1f2937" }}
-                            />
-                            <Legend />
-                            <Bar
-                                dataKey="cashSales"
-                                name="Numerar"
-                                fill="url(#colorCash)"
-                                radius={[4, 4, 0, 0]}
-                            />
-                            <Bar
-                                dataKey="cardSales"
-                                name="Card"
-                                fill="url(#colorCard)"
-                                radius={[4, 4, 0, 0]}
-                            />
-                        </BarChart>
-                    </ResponsiveContainer>
-                </CardContent>
-            </Card>
-
-            {/* Sales Trend */}
-            <Card>
-                <CardHeader>
-                    <CardTitle>Tendință Vânzări Totale</CardTitle>
-                </CardHeader>
-                <CardContent className="h-[400px]">
-                    <ResponsiveContainer width="100%" height="100%">
-                        <LineChart data={chartData}>
-                            <defs>
-                                <linearGradient
-                                    id="colorTotal"
-                                    x1="0"
-                                    y1="0"
-                                    x2="0"
-                                    y2="1"
-                                >
-                                    <stop
-                                        offset="5%"
-                                        stopColor="#8b5cf6"
-                                        stopOpacity={0.8}
-                                    />
-                                    <stop
-                                        offset="95%"
-                                        stopColor="#8b5cf6"
-                                        stopOpacity={0.2}
-                                    />
-                                </linearGradient>
-                            </defs>
-                            <CartesianGrid
-                                strokeDasharray="3 3"
-                                stroke="#e5e7eb"
-                            />
-                            <XAxis
-                                dataKey="date"
-                                tick={{ fill: "#6b7280" }}
-                                tickFormatter={(value) =>
-                                    format(new Date(value), "dd MMM")
-                                }
-                            />
-                            <YAxis tick={{ fill: "#6b7280" }} />
-                            <Tooltip
-                                contentStyle={{
-                                    backgroundColor: "#ffffff",
-                                    borderRadius: "8px",
-                                    border: "1px solid #e5e7eb",
-                                    boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
-                                }}
-                                itemStyle={{ color: "#1f2937" }}
-                            />
-                            <Legend />
-                            <Line
-                                type="monotone"
-                                dataKey="totalSales"
-                                name="Vânzări Totale"
-                                stroke="#8b5cf6"
-                                strokeWidth={3}
-                                dot={{ fill: "#8b5cf6", strokeWidth: 2 }}
-                                activeDot={{ r: 8 }}
-                            />
-                        </LineChart>
-                    </ResponsiveContainer>
-                </CardContent>
-            </Card>
-
-            {/* Supplier Distribution */}
-            <Card>
-                <CardHeader>
-                    <CardTitle>Distribuție Intrări pe Furnizori</CardTitle>
-                    <p className="text-sm text-muted-foreground">
-                        Perioada: {timespan.start} - {timespan.end}
-                    </p>
-                </CardHeader>
-                <CardContent className="h-[400px]">
-                    <ResponsiveContainer width="100%" height="100%">
-                        <BarChart data={supplierData} layout="vertical">
-                            <defs>
-                                <linearGradient
-                                    id="colorSupplier"
-                                    x1="0"
-                                    y1="0"
-                                    x2="1"
-                                    y2="0"
-                                >
-                                    <stop
-                                        offset="5%"
-                                        stopColor="#6366f1"
-                                        stopOpacity={0.8}
-                                    />
-                                    <stop
-                                        offset="95%"
-                                        stopColor="#6366f1"
-                                        stopOpacity={0.4}
-                                    />
-                                </linearGradient>
-                            </defs>
-                            <CartesianGrid
-                                strokeDasharray="3 3"
-                                stroke="#e5e7eb"
-                            />
-                            <XAxis type="number" tick={{ fill: "#6b7280" }} />
-                            <YAxis
-                                type="category"
-                                dataKey="supplier"
-                                width={150}
-                                tick={{ fill: "#6b7280" }}
-                            />
-                            <Tooltip
-                                contentStyle={{
-                                    backgroundColor: "#ffffff",
-                                    borderRadius: "8px",
-                                    border: "1px solid #e5e7eb",
-                                    boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
-                                }}
-                                itemStyle={{ color: "#1f2937" }}
-                            />
-                            <Legend />
-                            <Bar
-                                dataKey="total"
-                                name="Valoare Totală"
-                                fill="url(#colorSupplier)"
-                                radius={[0, 4, 4, 0]}
-                            />
-                        </BarChart>
-                    </ResponsiveContainer>
-                </CardContent>
-            </Card>
-
-            {/* Stock Movement */}
-            <Card>
-                <CardHeader>
-                    <CardTitle>Mișcare Stoc, Intrări și Ieșiri</CardTitle>
-                </CardHeader>
-                <CardContent className="h-[400px]">
-                    <ResponsiveContainer width="100%" height="100%">
-                        <AreaChart data={chartData}>
-                            <defs>
-                                <linearGradient
-                                    id="colorBalance"
-                                    x1="0"
-                                    y1="0"
-                                    x2="0"
-                                    y2="1"
-                                >
-                                    <stop
-                                        offset="5%"
-                                        stopColor="#3b82f6"
-                                        stopOpacity={0.8}
-                                    />
-                                    <stop
-                                        offset="95%"
-                                        stopColor="#3b82f6"
-                                        stopOpacity={0.2}
-                                    />
-                                </linearGradient>
-                                <linearGradient
-                                    id="colorEntries"
-                                    x1="0"
-                                    y1="0"
-                                    x2="0"
-                                    y2="1"
-                                >
-                                    <stop
-                                        offset="5%"
-                                        stopColor="#10b981"
-                                        stopOpacity={0.8}
-                                    />
-                                    <stop
-                                        offset="95%"
-                                        stopColor="#10b981"
-                                        stopOpacity={0.2}
-                                    />
-                                </linearGradient>
-                                <linearGradient
-                                    id="colorSales"
-                                    x1="0"
-                                    y1="0"
-                                    x2="0"
-                                    y2="1"
-                                >
-                                    <stop
-                                        offset="5%"
-                                        stopColor="#f59e0b"
-                                        stopOpacity={0.8}
-                                    />
-                                    <stop
-                                        offset="95%"
-                                        stopColor="#f59e0b"
-                                        stopOpacity={0.2}
-                                    />
-                                </linearGradient>
-                            </defs>
-                            <CartesianGrid strokeDasharray="3 3" />
-                            <XAxis
-                                dataKey="date"
-                                tick={{ fill: "#6b7280" }}
-                                tickFormatter={(value) =>
-                                    format(new Date(value), "dd MMM")
-                                }
-                            />
-                            <YAxis tick={{ fill: "#6b7280" }} />
-                            <Tooltip
-                                contentStyle={{
-                                    backgroundColor: "#ffffff",
-                                    borderRadius: "8px",
-                                }}
-                                itemStyle={{ color: "#1f2937" }}
-                            />
-                            <Legend />
-                            <Area
-                                type="monotone"
-                                dataKey="balance"
-                                name="Sold"
-                                stroke="#3b82f6"
-                                fillOpacity={1}
-                                fill="url(#colorBalance)"
-                            />
-                            <Area
-                                type="monotone"
-                                dataKey="entries"
-                                name="Intrări"
-                                stroke="#10b981"
-                                fillOpacity={1}
-                                fill="url(#colorEntries)"
-                            />
-                            <Area
-                                type="monotone"
-                                dataKey="totalSales"
-                                name="Ieșiri"
-                                stroke="#f59e0b"
-                                fillOpacity={1}
-                                fill="url(#colorSales)"
-                            />
-                        </AreaChart>
-                    </ResponsiveContainer>
-                </CardContent>
-            </Card>
-        </div>
-    );
-
-    const [dialogOpen, setDialogOpen] = useState(false);
-    const [dialogMessage, setDialogMessage] = useState("");
-
-    // Add new function to handle PDF generation
-    const handleGenerateReport = async (
-        entry: ProcessedEntry,
-        action: "save" | "preview"
-    ) => {
-        try {
-            if (!companyName) {
-                setDialogMessage("Vă rugăm să introduceți numele companiei.");
-                setDialogOpen(true);
-                return;
-            }
-
-            const reportData = {
-                date: new Date(entry.date),
-                companyName,
-                previousBalance: entry.initialValue,
-                entries: entry.entries.map((item, index) => ({
-                    id: index,
-                    documentNumber: item.documentNumber,
-                    explanation: item.explanation,
-                    merchandiseValue: item.merchandiseValue,
-                })),
-                sales: entry.sales.map((item, index) => ({
-                    id: index,
-                    documentNumber: item.documentNumber,
-                    explanation: item.explanation,
-                    merchandiseValue: item.merchandiseValue,
-                    cashValue: item.cashValue,
-                    cardValue: item.cardValue,
-                    "Nr crt": index + 1,
-                })),
-            };
-
-            const pdfBlob = await generateReportPDF(reportData);
-
-            if (action === "preview") {
-                const pdfUrl = URL.createObjectURL(pdfBlob);
-                window.open(pdfUrl, "_blank");
-                setTimeout(() => URL.revokeObjectURL(pdfUrl), 100);
-            } else {
-                if (window.showSaveFilePicker) {
-                    const fileHandle = await window.showSaveFilePicker({
-                        suggestedName: `raport_${format(
-                            new Date(entry.date),
-                            "dd_MM_yyyy"
-                        )}.pdf`,
-                        types: [
-                            {
-                                description: "PDF Document",
-                                accept: { "application/pdf": [".pdf"] },
-                            },
-                        ],
-                    });
-
-                    const writableStream = await fileHandle.createWritable();
-                    await writableStream.write(pdfBlob);
-                    await writableStream.close();
-
-                    setDialogMessage("Raportul a fost salvat cu succes!");
-                    setDialogOpen(true);
-                } else {
-                    setDialogMessage(
-                        "Funcția de salvare nu este suportată în acest browser."
-                    );
-                    setDialogOpen(true);
-                }
-            }
-        } catch (error) {
-            console.error("Error generating PDF:", error);
-            setDialogMessage("A apărut o eroare la generarea raportului.");
-            setDialogOpen(true);
-        }
-    };
-
     return (
         <div className="space-y-8 p-6 bg-gradient-to-br from-gray-50 to-white rounded-xl shadow-lg">
             <div className="space-y-4">
@@ -510,288 +80,335 @@ export default function DataVisualization({
                 </h1>
             </div>
 
-            <Tabs defaultValue="graphs" className="w-full">
-                <TabsList className="grid w-full grid-cols-2 bg-white p-1 rounded-lg gap-2 shadow-sm backdrop-blur-sm bg-opacity-80">
-                    <TabsTrigger
-                        value="graphs"
-                        className="px-8 py-3 text-lg font-medium transition-all duration-200 ease-in-out rounded-md data-[state=active]:bg-primary data-[state=active]:text-primary-foreground hover:bg-gray-100 data-[state=active]:hover:bg-primary/90"
-                    >
-                        Grafice
-                    </TabsTrigger>
-                    <TabsTrigger
-                        value="reports"
-                        className="px-8 py-3 text-lg font-medium transition-all duration-200 ease-in-out rounded-md data-[state=active]:bg-primary data-[state=active]:text-primary-foreground hover:bg-gray-100 data-[state=active]:hover:bg-primary/90"
-                    >
-                        Rapoarte
-                    </TabsTrigger>
-                </TabsList>
+            {/* Charts Section */}
+            <div className="space-y-8">
+                {/* Daily Sales Comparison */}
+                <Card>
+                    <CardHeader>
+                        <CardTitle>
+                            Comparație Vânzări Zilnice (Numerar vs Card)
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent className="h-[400px]">
+                        <ResponsiveContainer width="100%" height="100%">
+                            <BarChart data={chartData}>
+                                <defs>
+                                    <linearGradient
+                                        id="colorCash"
+                                        x1="0"
+                                        y1="0"
+                                        x2="0"
+                                        y2="1"
+                                    >
+                                        <stop
+                                            offset="5%"
+                                            stopColor="#4f46e5"
+                                            stopOpacity={0.8}
+                                        />
+                                        <stop
+                                            offset="95%"
+                                            stopColor="#4f46e5"
+                                            stopOpacity={0.4}
+                                        />
+                                    </linearGradient>
+                                    <linearGradient
+                                        id="colorCard"
+                                        x1="0"
+                                        y1="0"
+                                        x2="0"
+                                        y2="1"
+                                    >
+                                        <stop
+                                            offset="5%"
+                                            stopColor="#10b981"
+                                            stopOpacity={0.8}
+                                        />
+                                        <stop
+                                            offset="95%"
+                                            stopColor="#10b981"
+                                            stopOpacity={0.4}
+                                        />
+                                    </linearGradient>
+                                </defs>
+                                <CartesianGrid
+                                    strokeDasharray="3 3"
+                                    stroke="#e5e7eb"
+                                />
+                                <XAxis
+                                    dataKey="date"
+                                    tick={{ fill: "#6b7280" }}
+                                    tickFormatter={(value) =>
+                                        format(new Date(value), "dd MMM")
+                                    }
+                                />
+                                <YAxis tick={{ fill: "#6b7280" }} />
+                                <Tooltip
+                                    contentStyle={{
+                                        backgroundColor: "#ffffff",
+                                        borderRadius: "8px",
+                                        border: "1px solid #e5e7eb",
+                                        boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
+                                    }}
+                                    itemStyle={{ color: "#1f2937" }}
+                                />
+                                <Legend />
+                                <Bar
+                                    dataKey="cashSales"
+                                    name="Numerar"
+                                    fill="url(#colorCash)"
+                                    radius={[4, 4, 0, 0]}
+                                />
+                                <Bar
+                                    dataKey="cardSales"
+                                    name="Card"
+                                    fill="url(#colorCard)"
+                                    radius={[4, 4, 0, 0]}
+                                />
+                            </BarChart>
+                        </ResponsiveContainer>
+                    </CardContent>
+                </Card>
 
-                <TabsContent value="graphs">
-                    <ChartsSection />
-                </TabsContent>
+                {/* Sales Trend */}
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Tendință Vânzări Totale</CardTitle>
+                    </CardHeader>
+                    <CardContent className="h-[400px]">
+                        <ResponsiveContainer width="100%" height="100%">
+                            <LineChart data={chartData}>
+                                <defs>
+                                    <linearGradient
+                                        id="colorTotal"
+                                        x1="0"
+                                        y1="0"
+                                        x2="0"
+                                        y2="1"
+                                    >
+                                        <stop
+                                            offset="5%"
+                                            stopColor="#8b5cf6"
+                                            stopOpacity={0.8}
+                                        />
+                                        <stop
+                                            offset="95%"
+                                            stopColor="#8b5cf6"
+                                            stopOpacity={0.2}
+                                        />
+                                    </linearGradient>
+                                </defs>
+                                <CartesianGrid
+                                    strokeDasharray="3 3"
+                                    stroke="#e5e7eb"
+                                />
+                                <XAxis
+                                    dataKey="date"
+                                    tick={{ fill: "#6b7280" }}
+                                    tickFormatter={(value) =>
+                                        format(new Date(value), "dd MMM")
+                                    }
+                                />
+                                <YAxis tick={{ fill: "#6b7280" }} />
+                                <Tooltip
+                                    contentStyle={{
+                                        backgroundColor: "#ffffff",
+                                        borderRadius: "8px",
+                                        border: "1px solid #e5e7eb",
+                                        boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
+                                    }}
+                                    itemStyle={{ color: "#1f2937" }}
+                                />
+                                <Legend />
+                                <Line
+                                    type="monotone"
+                                    dataKey="totalSales"
+                                    name="Vânzări Totale"
+                                    stroke="#8b5cf6"
+                                    strokeWidth={3}
+                                    dot={{ fill: "#8b5cf6", strokeWidth: 2 }}
+                                    activeDot={{ r: 8 }}
+                                />
+                            </LineChart>
+                        </ResponsiveContainer>
+                    </CardContent>
+                </Card>
 
-                <TabsContent value="reports">
-                    {data.processedEntries.map(
-                        (entry: ProcessedEntry, index: number) => (
-                            <Collapsible key={index} className="mb-4">
-                                <Card>
-                                    <CollapsibleTrigger className="w-full">
-                                        <CardHeader className="border-b bg-gray-50 flex flex-row items-center justify-between">
-                                            <CardTitle className="text-xl">
-                                                Raport pentru {entry.date}
-                                            </CardTitle>
-                                            <ChevronDown className="h-6 w-6" />
-                                        </CardHeader>
-                                    </CollapsibleTrigger>
+                {/* Supplier Distribution */}
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Distribuție Intrări pe Furnizori</CardTitle>
+                        <p className="text-sm text-muted-foreground">
+                            Perioada: {timespan.start} - {timespan.end}
+                        </p>
+                    </CardHeader>
+                    <CardContent className="h-[400px]">
+                        <ResponsiveContainer width="100%" height="100%">
+                            <BarChart data={supplierData} layout="vertical">
+                                <defs>
+                                    <linearGradient
+                                        id="colorSupplier"
+                                        x1="0"
+                                        y1="0"
+                                        x2="1"
+                                        y2="0"
+                                    >
+                                        <stop
+                                            offset="5%"
+                                            stopColor="#6366f1"
+                                            stopOpacity={0.8}
+                                        />
+                                        <stop
+                                            offset="95%"
+                                            stopColor="#6366f1"
+                                            stopOpacity={0.4}
+                                        />
+                                    </linearGradient>
+                                </defs>
+                                <CartesianGrid
+                                    strokeDasharray="3 3"
+                                    stroke="#e5e7eb"
+                                />
+                                <XAxis
+                                    type="number"
+                                    tick={{ fill: "#6b7280" }}
+                                />
+                                <YAxis
+                                    type="category"
+                                    dataKey="supplier"
+                                    width={150}
+                                    tick={{ fill: "#6b7280" }}
+                                />
+                                <Tooltip
+                                    contentStyle={{
+                                        backgroundColor: "#ffffff",
+                                        borderRadius: "8px",
+                                        border: "1px solid #e5e7eb",
+                                        boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
+                                    }}
+                                    itemStyle={{ color: "#1f2937" }}
+                                />
+                                <Legend />
+                                <Bar
+                                    dataKey="total"
+                                    name="Valoare Totală"
+                                    fill="url(#colorSupplier)"
+                                    radius={[0, 4, 4, 0]}
+                                />
+                            </BarChart>
+                        </ResponsiveContainer>
+                    </CardContent>
+                </Card>
 
-                                    <CollapsibleContent>
-                                        <CardContent className="p-6 space-y-8">
-                                            {/* Balance Summary */}
-                                            <div className="grid grid-cols-2 gap-8">
-                                                <div className="p-4 bg-gray-50 rounded-lg">
-                                                    <p className="text-sm text-gray-600 mb-1">
-                                                        Sold Inițial
-                                                    </p>
-                                                    <p className="text-2xl font-semibold">
-                                                        {entry.initialValue.toFixed(
-                                                            2
-                                                        )}{" "}
-                                                        RON
-                                                    </p>
-                                                </div>
-                                                <div className="p-4 bg-gray-50 rounded-lg">
-                                                    <p className="text-sm text-gray-600 mb-1">
-                                                        Sold Final
-                                                    </p>
-                                                    <p className="text-2xl font-semibold">
-                                                        {entry.finalValue.toFixed(
-                                                            2
-                                                        )}{" "}
-                                                        RON
-                                                    </p>
-                                                </div>
-                                            </div>
-
-                                            {/* Entries Section */}
-                                            <div>
-                                                <h3 className="text-lg font-semibold mb-4">
-                                                    Intrări
-                                                </h3>
-                                                {entry.entries.length > 0 ? (
-                                                    <Table>
-                                                        <TableHeader>
-                                                            <TableRow className="bg-gray-50">
-                                                                <TableHead>
-                                                                    Nr crt
-                                                                </TableHead>
-                                                                <TableHead>
-                                                                    Număr
-                                                                    Document
-                                                                </TableHead>
-                                                                <TableHead>
-                                                                    Explicație
-                                                                </TableHead>
-                                                                <TableHead className="text-right">
-                                                                    Valoare
-                                                                    Marfă
-                                                                </TableHead>
-                                                            </TableRow>
-                                                        </TableHeader>
-                                                        <TableBody>
-                                                            {entry.entries.map(
-                                                                (item, i) => (
-                                                                    <TableRow
-                                                                        key={i}
-                                                                    >
-                                                                        <TableCell>
-                                                                            {
-                                                                                item[
-                                                                                    "Nr crt"
-                                                                                ]
-                                                                            }
-                                                                        </TableCell>
-                                                                        <TableCell>
-                                                                            {
-                                                                                item.documentNumber
-                                                                            }
-                                                                        </TableCell>
-                                                                        <TableCell>
-                                                                            {
-                                                                                item.explanation
-                                                                            }
-                                                                        </TableCell>
-                                                                        <TableCell className="text-right">
-                                                                            {item.merchandiseValue.toFixed(
-                                                                                2
-                                                                            )}
-                                                                        </TableCell>
-                                                                    </TableRow>
-                                                                )
-                                                            )}
-                                                        </TableBody>
-                                                    </Table>
-                                                ) : (
-                                                    <p className="text-gray-500 text-center py-4 bg-gray-50 rounded-lg">
-                                                        Nu sunt intrări în
-                                                        această zi
-                                                    </p>
-                                                )}
-                                            </div>
-
-                                            {/* Sales Section */}
-                                            <div>
-                                                <h3 className="text-lg font-semibold mb-4">
-                                                    Vânzări
-                                                </h3>
-                                                {entry.sales.length > 0 ? (
-                                                    <Table>
-                                                        <TableHeader>
-                                                            <TableRow className="bg-gray-50">
-                                                                <TableHead>
-                                                                    Nr crt
-                                                                </TableHead>
-                                                                <TableHead>
-                                                                    Număr
-                                                                    Document
-                                                                </TableHead>
-                                                                <TableHead>
-                                                                    Explicație
-                                                                </TableHead>
-                                                                <TableHead className="text-right">
-                                                                    Valoare
-                                                                    Numerar
-                                                                </TableHead>
-                                                                <TableHead className="text-right">
-                                                                    Valoare Card
-                                                                </TableHead>
-                                                                <TableHead className="text-right">
-                                                                    Valoare
-                                                                    Totală
-                                                                </TableHead>
-                                                            </TableRow>
-                                                        </TableHeader>
-                                                        <TableBody>
-                                                            {entry.sales.map(
-                                                                (item, i) => (
-                                                                    <TableRow
-                                                                        key={i}
-                                                                    >
-                                                                        <TableCell>
-                                                                            {
-                                                                                item[
-                                                                                    "Nr crt"
-                                                                                ]
-                                                                            }
-                                                                        </TableCell>
-                                                                        <TableCell>
-                                                                            {
-                                                                                item.documentNumber
-                                                                            }
-                                                                        </TableCell>
-                                                                        <TableCell>
-                                                                            {
-                                                                                item.explanation
-                                                                            }
-                                                                        </TableCell>
-                                                                        <TableCell className="text-right">
-                                                                            {item.cashValue.toFixed(
-                                                                                2
-                                                                            )}
-                                                                        </TableCell>
-                                                                        <TableCell className="text-right">
-                                                                            {item.cardValue.toFixed(
-                                                                                2
-                                                                            )}
-                                                                        </TableCell>
-                                                                        <TableCell className="text-right">
-                                                                            {item.merchandiseValue.toFixed(
-                                                                                2
-                                                                            )}
-                                                                        </TableCell>
-                                                                    </TableRow>
-                                                                )
-                                                            )}
-                                                        </TableBody>
-                                                    </Table>
-                                                ) : (
-                                                    <p className="text-gray-500 text-center py-4 bg-gray-50 rounded-lg">
-                                                        Nu sunt vânzări/ieșiri
-                                                        în această zi
-                                                    </p>
-                                                )}
-                                            </div>
-
-                                            {/* Totals Summary */}
-                                            <div className="grid grid-cols-2 gap-8 mt-6">
-                                                <div className="p-4 bg-gray-50 rounded-lg">
-                                                    <p className="text-sm text-gray-600 mb-1">
-                                                        Total Intrări
-                                                    </p>
-                                                    <p className="text-2xl font-semibold">
-                                                        {entry.totalValue.toFixed(
-                                                            2
-                                                        )}{" "}
-                                                        RON
-                                                    </p>
-                                                </div>
-                                                <div className="p-4 bg-gray-50 rounded-lg">
-                                                    <p className="text-sm text-gray-600 mb-1">
-                                                        Total Vânzări
-                                                    </p>
-                                                    <p className="text-2xl font-semibold">
-                                                        {entry.totalSales.toFixed(
-                                                            2
-                                                        )}{" "}
-                                                        RON
-                                                    </p>
-                                                </div>
-                                            </div>
-
-                                            {/* Add Report Actions */}
-                                            <div className="flex flex-col sm:flex-row gap-4 pt-4 border-t">
-                                                <Button
-                                                    onClick={() =>
-                                                        handleGenerateReport(
-                                                            entry,
-                                                            "save"
-                                                        )
-                                                    }
-                                                    className="w-full sm:w-auto"
-                                                >
-                                                    Salvează Raportul
-                                                </Button>
-                                                <Button
-                                                    variant="secondary"
-                                                    onClick={() =>
-                                                        handleGenerateReport(
-                                                            entry,
-                                                            "preview"
-                                                        )
-                                                    }
-                                                    className="w-full sm:w-auto"
-                                                >
-                                                    <Eye className="mr-2 h-4 w-4" />
-                                                    Previzualizare PDF
-                                                </Button>
-                                            </div>
-                                        </CardContent>
-                                    </CollapsibleContent>
-                                </Card>
-                            </Collapsible>
-                        )
-                    )}
-                </TabsContent>
-            </Tabs>
-
-            {/* Add Dialog Component */}
-            <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-                <DialogContent>
-                    <DialogHeader>
-                        <DialogTitle>Notificare</DialogTitle>
-                        <DialogDescription>{dialogMessage}</DialogDescription>
-                    </DialogHeader>
-                </DialogContent>
-            </Dialog>
+                {/* Stock Movement */}
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Mișcare Stoc, Intrări și Ieșiri</CardTitle>
+                    </CardHeader>
+                    <CardContent className="h-[400px]">
+                        <ResponsiveContainer width="100%" height="100%">
+                            <AreaChart data={chartData}>
+                                <defs>
+                                    <linearGradient
+                                        id="colorBalance"
+                                        x1="0"
+                                        y1="0"
+                                        x2="0"
+                                        y2="1"
+                                    >
+                                        <stop
+                                            offset="5%"
+                                            stopColor="#3b82f6"
+                                            stopOpacity={0.8}
+                                        />
+                                        <stop
+                                            offset="95%"
+                                            stopColor="#3b82f6"
+                                            stopOpacity={0.2}
+                                        />
+                                    </linearGradient>
+                                    <linearGradient
+                                        id="colorEntries"
+                                        x1="0"
+                                        y1="0"
+                                        x2="0"
+                                        y2="1"
+                                    >
+                                        <stop
+                                            offset="5%"
+                                            stopColor="#10b981"
+                                            stopOpacity={0.8}
+                                        />
+                                        <stop
+                                            offset="95%"
+                                            stopColor="#10b981"
+                                            stopOpacity={0.2}
+                                        />
+                                    </linearGradient>
+                                    <linearGradient
+                                        id="colorSales"
+                                        x1="0"
+                                        y1="0"
+                                        x2="0"
+                                        y2="1"
+                                    >
+                                        <stop
+                                            offset="5%"
+                                            stopColor="#f59e0b"
+                                            stopOpacity={0.8}
+                                        />
+                                        <stop
+                                            offset="95%"
+                                            stopColor="#f59e0b"
+                                            stopOpacity={0.2}
+                                        />
+                                    </linearGradient>
+                                </defs>
+                                <CartesianGrid strokeDasharray="3 3" />
+                                <XAxis
+                                    dataKey="date"
+                                    tick={{ fill: "#6b7280" }}
+                                    tickFormatter={(value) =>
+                                        format(new Date(value), "dd MMM")
+                                    }
+                                />
+                                <YAxis tick={{ fill: "#6b7280" }} />
+                                <Tooltip
+                                    contentStyle={{
+                                        backgroundColor: "#ffffff",
+                                        borderRadius: "8px",
+                                    }}
+                                    itemStyle={{ color: "#1f2937" }}
+                                />
+                                <Legend />
+                                <Area
+                                    type="monotone"
+                                    dataKey="balance"
+                                    name="Sold"
+                                    stroke="#3b82f6"
+                                    fillOpacity={1}
+                                    fill="url(#colorBalance)"
+                                />
+                                <Area
+                                    type="monotone"
+                                    dataKey="entries"
+                                    name="Intrări"
+                                    stroke="#10b981"
+                                    fillOpacity={1}
+                                    fill="url(#colorEntries)"
+                                />
+                                <Area
+                                    type="monotone"
+                                    dataKey="totalSales"
+                                    name="Ieșiri"
+                                    stroke="#f59e0b"
+                                    fillOpacity={1}
+                                    fill="url(#colorSales)"
+                                />
+                            </AreaChart>
+                        </ResponsiveContainer>
+                    </CardContent>
+                </Card>
+            </div>
         </div>
     );
 }

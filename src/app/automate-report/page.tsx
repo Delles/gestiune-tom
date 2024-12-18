@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { FileUp, Download } from "lucide-react";
+import { FileUp, Download, Loader2 } from "lucide-react";
 import { extractDataFromExcel } from "@/lib/excelExtractor";
 import { generateReportPDF } from "@/lib/generatePDF";
 import { convertProcessedEntryToReportData } from "@/lib/dataConverter";
@@ -17,19 +17,82 @@ import {
     DialogHeader,
     DialogTitle,
 } from "@/components/ui/dialog";
+import { ReportsSection } from "@/components/ReportsSection";
+import { ExtractedExcelData } from "@/types/reportTypes";
+
+interface FileUploadProps {
+    id: string;
+    label: string;
+    file: File | null;
+    onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+}
+
+function FileUpload({ id, label, file, onChange }: FileUploadProps) {
+    return (
+        <div className="space-y-2">
+            <Label htmlFor={id}>{label}</Label>
+            <div className="relative">
+                <Input
+                    id={id}
+                    type="file"
+                    className="hidden"
+                    accept=".xlsx,.xls"
+                    onChange={onChange}
+                />
+                <Button
+                    variant="outline"
+                    className="w-full text-left flex justify-between items-center"
+                    onClick={() => document.getElementById(id)?.click()}
+                >
+                    <span className="truncate">
+                        {file ? file.name : "Încarcă document"}
+                    </span>
+                    <FileUp className="h-4 w-4 flex-shrink-0" />
+                </Button>
+            </div>
+        </div>
+    );
+}
 
 export default function AutomateReportPage() {
     const [entriesFile, setEntriesFile] = useState<File | null>(null);
     const [salesFile, setSalesFile] = useState<File | null>(null);
     const [companyName, setCompanyName] = useState("");
-    const [initialValue, setInitialValue] = useState<number>(0);
+    const [initialValue, setInitialValue] = useState<number | "">("");
     const [isGenerating, setIsGenerating] = useState(false);
     const [dialogOpen, setDialogOpen] = useState(false);
     const [dialogMessage, setDialogMessage] = useState("");
+    const [processedData, setProcessedData] =
+        useState<ExtractedExcelData | null>(null);
+
+    const handleProcessFiles = async () => {
+        if (!entriesFile && !salesFile) {
+            setDialogMessage("Vă rugăm să încărcați cel puțin un fișier.");
+            setDialogOpen(true);
+            return;
+        }
+
+        try {
+            setIsGenerating(true);
+            const extractedData = await extractDataFromExcel(
+                entriesFile,
+                salesFile,
+                initialValue === "" ? 0 : initialValue
+            );
+            setProcessedData(extractedData);
+        } catch (error) {
+            console.error(error);
+            setDialogMessage("A apărut o eroare la procesarea fișierelor.");
+            setDialogOpen(true);
+        } finally {
+            setIsGenerating(false);
+        }
+    };
 
     const handleGenerateReports = async () => {
         if (!entriesFile && !salesFile) {
             alert("Please upload at least one file");
+
             return;
         }
 
@@ -39,7 +102,7 @@ export default function AutomateReportPage() {
             const extractedData = await extractDataFromExcel(
                 entriesFile,
                 salesFile,
-                initialValue
+                initialValue === "" ? 0 : initialValue
             );
 
             // Create a new ZIP file
@@ -94,7 +157,7 @@ export default function AutomateReportPage() {
     };
 
     return (
-        <div className="min-h-screen flex items-center bg-background py-2 px-4">
+        <div className="min-h-screen flex flex-col bg-background py-8 px-4">
             <div className="container max-w-3xl mx-auto">
                 <Card className="p-4 md:p-6">
                     <CardHeader className="space-y-2 p-0 md:p-2">
@@ -126,93 +189,86 @@ export default function AutomateReportPage() {
                                 type="number"
                                 value={initialValue}
                                 onChange={(e) =>
-                                    setInitialValue(Number(e.target.value))
+                                    setInitialValue(
+                                        e.target.value === ""
+                                            ? ""
+                                            : Number(e.target.value)
+                                    )
                                 }
                                 placeholder="0.00"
                             />
                         </div>
 
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <div className="space-y-2">
-                                <Label htmlFor="entriesFile">
-                                    Document Intrări
-                                </Label>
-                                <Button
-                                    variant="outline"
-                                    className="w-full"
-                                    onClick={() =>
-                                        document
-                                            .getElementById("entriesFile")
-                                            ?.click()
-                                    }
-                                >
-                                    <FileUp className="mr-2 h-4 w-4" />
-                                    {entriesFile
-                                        ? entriesFile.name
-                                        : "Încarcă document"}
-                                </Button>
-                                <Input
-                                    id="entriesFile"
-                                    type="file"
-                                    className="hidden"
-                                    accept=".xlsx,.xls"
-                                    onChange={(e) =>
-                                        setEntriesFile(
-                                            e.target.files?.[0] || null
-                                        )
-                                    }
-                                />
-                            </div>
+                            <FileUpload
+                                id="entriesFile"
+                                label="Document Intrări"
+                                file={entriesFile}
+                                onChange={(e) =>
+                                    setEntriesFile(e.target.files?.[0] || null)
+                                }
+                            />
 
-                            <div className="space-y-2">
-                                <Label htmlFor="salesFile">
-                                    Document Vânzări
-                                </Label>
-                                <Button
-                                    variant="outline"
-                                    className="w-full"
-                                    onClick={() =>
-                                        document
-                                            .getElementById("salesFile")
-                                            ?.click()
-                                    }
-                                >
-                                    <FileUp className="mr-2 h-4 w-4" />
-                                    {salesFile
-                                        ? salesFile.name
-                                        : "Încarcă document"}
-                                </Button>
-                                <Input
-                                    id="salesFile"
-                                    type="file"
-                                    className="hidden"
-                                    accept=".xlsx,.xls"
-                                    onChange={(e) =>
-                                        setSalesFile(
-                                            e.target.files?.[0] || null
-                                        )
-                                    }
-                                />
-                            </div>
+                            <FileUpload
+                                id="salesFile"
+                                label="Document Vânzări"
+                                file={salesFile}
+                                onChange={(e) =>
+                                    setSalesFile(e.target.files?.[0] || null)
+                                }
+                            />
                         </div>
 
                         <Button
                             className="w-full"
-                            onClick={handleGenerateReports}
+                            onClick={handleProcessFiles}
                             disabled={
                                 isGenerating ||
-                                (!entriesFile && !salesFile) ||
-                                !companyName
+                                !companyName ||
+                                (!entriesFile && !salesFile)
                             }
                         >
-                            <Download className="mr-2 h-4 w-4" />
-                            {isGenerating
-                                ? "Generare în curs..."
-                                : "Generează Rapoarte"}
+                            {isGenerating ? (
+                                <>
+                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                    Procesare în curs...
+                                </>
+                            ) : (
+                                "Procesează Fișiere"
+                            )}
                         </Button>
                     </CardContent>
                 </Card>
             </div>
+
+            {processedData && (
+                <div className="container max-w-7xl mx-auto mt-8">
+                    <Card className="mb-8">
+                        <CardHeader>
+                            <CardTitle className="text-2xl text-center">
+                                Previzualizare Rapoarte
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <ReportsSection
+                                data={processedData}
+                                companyName={companyName}
+                            />
+                        </CardContent>
+                    </Card>
+
+                    <Button
+                        className="w-full"
+                        onClick={handleGenerateReports}
+                        disabled={isGenerating}
+                    >
+                        <Download className="mr-2 h-4 w-4" />
+                        {isGenerating
+                            ? "Generare în curs..."
+                            : "Generează Rapoarte ZIP"}
+                    </Button>
+                </div>
+            )}
 
             <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
                 <DialogContent>
