@@ -194,7 +194,8 @@ async function processSalesFile(file: File): Promise<ExtractedEntry[]> {
             header: 1,
         });
 
-        const salesMap: { [date: string]: ExtractedEntry } = {};
+        // Changed from salesMap to an array to hold individual entries
+        const salesEntries: ExtractedEntry[] = [];
 
         // Identify the header row by finding the row that contains 'Nr. crt.'
         let headerRowIndex = -1;
@@ -221,12 +222,16 @@ async function processSalesFile(file: File): Promise<ExtractedEntry[]> {
             headerMap[header.trim()] = index;
         });
 
-        // Required columns based on sample data
+        // Required columns (ensure these cover both Raport Z and Chitanta structures)
+        // We might need more flexibility here if Chitanta rows have different columns.
+        // For now, assume these columns exist or are handled gracefully if missing.
         const requiredColumns = [
             "Nr. crt.",
             "Data incasarii",
             "Incasare",
+            "Tip",
             "Explicatie",
+            "Client",
             "Moneda",
             "Valoare",
         ];
@@ -246,10 +251,11 @@ async function processSalesFile(file: File): Promise<ExtractedEntry[]> {
             if (!row || row.length === 0) continue; // Skip empty rows
 
             const dateStr = row[headerMap["Data incasarii"]];
-            const incasare = row[headerMap["Incasare"]] as string | number;
-
+            const incasareRaw = row[headerMap["Incasare"]]; // Keep raw value
             const explicatie = (row[headerMap["Explicatie"]] as string) || "";
             const valoareStr = row[headerMap["Valoare"]] as string | number;
+            const tipValueRaw = row[headerMap["Tip"]]; // Read the Tip column
+            const clientValueRaw = row[headerMap["Client"]]; // Read the Client column
 
             // Parse and validate date
             const parsedDate = parseDate(dateStr as string);
@@ -276,55 +282,81 @@ async function processSalesFile(file: File): Promise<ExtractedEntry[]> {
                 continue; // Skip rows with invalid values
             }
 
-            // Create document number (e.g., "RF 1408")
-            const documentValue = Number(incasare);
-            const updatedDocumentNumber = documentValue - 2;
-            const documentNumber = `RF ${updatedDocumentNumber}`;
-
-            // Update explanation to include "Raport fiscal Z {documentValue}"
-            const updatedExplanation = `Raport fiscal Z ${documentValue}`;
-
-            // Determine payment type
+            let documentNumber: string = "";
+            let updatedExplanation: string = explicatie; // Default to original explanation
             let cashValue = 0;
             let cardValue = 0;
-            if (explicatie.toLowerCase().includes("numerar")) {
-                cashValue = valoare;
-            }
+            let isValidSale = false;
+
+            // Determine entry type and extract details
+            const incasareStr = String(incasareRaw || "");
+            const explicatieLower = explicatie.toLowerCase();
+            const tipValueLower = String(tipValueRaw || "").toLowerCase(); // Process Tip value
+
             if (
-                explicatie.toLowerCase().includes("pos") ||
-                explicatie.toLowerCase().includes("card")
+                explicatieLower.includes("numerar") ||
+                explicatieLower.includes("pos") ||
+                explicatieLower.includes("card")
             ) {
-                cardValue = valoare;
+                // Assume "Raport Fiscal Z" type based on explanation keywords
+                // Extract the number part from 'incasare' (e.g., '1523 Card' or '1523 Raport Z')
+                const match = incasareStr.match(/^(\d+)/);
+                const documentValue = match ? parseInt(match[1], 10) : NaN;
+
+                if (!isNaN(documentValue)) {
+                    const updatedDocumentNumber = documentValue - 2; // Original logic
+                    documentNumber = `RF ${updatedDocumentNumber}`;
+                    updatedExplanation = `Raport fiscal Z ${documentValue}`;
+                    isValidSale = true;
+
+                    if (explicatieLower.includes("numerar")) {
+                        cashValue = valoare;
+                    } else {
+                        // Includes "pos" or "card"
+                        cardValue = valoare;
+                    }
+                } else {
+                    console.warn(
+                        `Could not parse document number for Raport Fiscal entry at row ${
+                            i + 1
+                        }: Incasare=${incasareStr}`
+                    );
+                }
+            } else if (tipValueLower === "chitanta") {
+                // Handle "Chitanta" type (identified by Tip column)
+                documentNumber = incasareStr; // Use 'Incasare' column (e.g., "ATM0002")
+                const clientName = String(clientValueRaw || ""); // Get client name
+                updatedExplanation = `Chitanta ${clientName}`.trim(); // Construct new explanation
+
+                cashValue = valoare; // Assume Chitanta is always cash for now
+                isValidSale = true;
             }
 
-            const dateKey = parsedDate;
-
-            if (!salesMap[dateKey]) {
-                salesMap[dateKey] = {
+            // If it's a valid sale type we processed, create an entry
+            if (isValidSale) {
+                const salesEntry: ExtractedEntry = {
                     date: parsedDate,
-                    documentNumber,
+                    documentNumber: documentNumber,
                     explanation: updatedExplanation,
-                    merchandiseValue: 0,
+                    merchandiseValue: valoare, // Use the single row value
                     isEntry: false,
-                    cashValue: 0,
-                    cardValue: 0,
+                    cashValue: cashValue,
+                    cardValue: cardValue,
+                    // purchaseValue is not relevant for sales
                 };
-            }
-
-            // Aggregate values
-            const salesEntry = salesMap[dateKey];
-            if (salesEntry) {
-                salesEntry.merchandiseValue =
-                    (salesEntry.merchandiseValue || 0) + valoare;
-                salesEntry.cashValue = (salesEntry.cashValue || 0) + cashValue;
-                salesEntry.cardValue = (salesEntry.cardValue || 0) + cardValue;
+                salesEntries.push(salesEntry);
+            } else {
+                console.warn(
+                    `Skipping row ${
+                        i + 1
+                    } due to unrecognized sale type or parsing issue: Tip='${tipValueRaw}', Explicatie='${explicatie}', Incasare='${incasareStr}'`
+                );
             }
         }
 
-        // Convert the map to an array of ExtractedEntry
-        const mergedSales: ExtractedEntry[] = Object.values(salesMap);
-
-        return mergedSales;
+        // Return the array of individual ExtractedEntry objects
+        // return Object.values(salesMap); // Old logic
+        return salesEntries; // New logic
     } catch (error) {
         console.error("Error processing Sales file:", error);
         throw error; // Re-throw the error to be caught in the main function
