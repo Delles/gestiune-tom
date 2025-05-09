@@ -3,6 +3,7 @@ import {
     ExtractedEntry,
     ExtractedExcelData,
     ProcessedEntry,
+    SaleItem,
 } from "../types/reportTypes";
 
 /**
@@ -364,7 +365,8 @@ async function processSalesFile(file: File): Promise<ExtractedEntry[]> {
 }
 
 /**
- * Combine data by date and calculate running balances
+ * Combine data by date and calculate running balances.
+ * This function will now also aggregate sales by documentNumber within each day.
  */
 function combineDataByDate(
     sortedData: ExtractedEntry[],
@@ -372,22 +374,24 @@ function combineDataByDate(
 ): ProcessedEntry[] {
     const entriesByDate = new Map<string, ProcessedEntry>();
 
+    // First pass: Group by date and prepare for aggregation
     sortedData.forEach((item) => {
         if (!entriesByDate.has(item.date)) {
             entriesByDate.set(item.date, {
                 date: item.date,
-                initialValue: 0,
+                initialValue: 0, // Will be set in the second pass
                 entries: [],
-                sales: [],
-                totalValue: 0,
-                totalSales: 0,
-                finalValue: 0,
+                sales: [], // Sales will be aggregated here
+                totalValue: 0, // Sum of entry merchandiseValues, calculated in second pass
+                totalSales: 0, // Sum of aggregated sale merchandiseValues, calculated in second pass
+                finalValue: 0, // Will be set in the second pass
             });
         }
 
         const dateEntry = entriesByDate.get(item.date)!;
 
         if (item.isEntry) {
+            // Add entry items directly. Nr crt will be their index + 1.
             dateEntry.entries.push({
                 "Nr crt": dateEntry.entries.length + 1,
                 documentNumber: item.documentNumber,
@@ -395,31 +399,80 @@ function combineDataByDate(
                 merchandiseValue: item.merchandiseValue,
                 purchaseValue: item.purchaseValue || 0,
             });
-            dateEntry.totalValue += item.merchandiseValue;
         } else {
-            dateEntry.sales.push({
-                "Nr crt": dateEntry.sales.length + 1,
-                documentNumber: item.documentNumber,
-                explanation: item.explanation,
-                merchandiseValue: item.merchandiseValue,
-                cashValue: item.cashValue || 0,
-                cardValue: item.cardValue || 0,
-            });
-            dateEntry.totalSales += item.merchandiseValue;
+            // This is a sale item, aggregate by documentNumber
+            // For sales, we find if an item with the same documentNumber already exists for this date.
+            // The explanation for "Raport Fiscal Z" type entries should be consistent if documentNumber is the same.
+            const existingSaleIndex = dateEntry.sales.findIndex(
+                (s) =>
+                    s.documentNumber === item.documentNumber &&
+                    s.explanation === item.explanation
+            );
+
+            if (existingSaleIndex !== -1) {
+                // Aggregate with existing sale entry
+                const existingSale = dateEntry.sales[existingSaleIndex];
+                existingSale.cashValue += item.cashValue || 0;
+                existingSale.cardValue += item.cardValue || 0;
+                // merchandiseValue for this SaleItem will be updated in the second pass
+            } else {
+                // Add as a new sale entry.
+                // Note: item.merchandiseValue from ExtractedEntry is the value from the specific Excel row.
+                // The final SaleItem.merchandiseValue will be cashValue + cardValue.
+                dateEntry.sales.push({
+                    "Nr crt": 0, // Placeholder, will be set in the second pass
+                    documentNumber: item.documentNumber,
+                    explanation: item.explanation,
+                    merchandiseValue: 0, // Placeholder, will be sum of cashValue and cardValue
+                    cashValue: item.cashValue || 0,
+                    cardValue: item.cardValue || 0,
+                    // purchaseValue is optional in SaleItem and not typically part of sales aggregation from these Excel types.
+                } as SaleItem); // Cast to SaleItem explicitly
+            }
         }
     });
 
-    // Calculate running balances
+    // Second pass: Finalize each day's entry, calculate totals, and running balances
+    const result: ProcessedEntry[] = [];
     let runningBalance = initialValue;
-    const result = Array.from(entriesByDate.values())
-        .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
-        .map((entry) => {
-            entry.initialValue = runningBalance;
-            entry.finalValue =
-                runningBalance + entry.totalValue - entry.totalSales;
-            runningBalance = entry.finalValue;
-            return entry;
+
+    // Sort dates before processing to ensure correct running balance calculation
+    const sortedDates = Array.from(entriesByDate.keys()).sort(
+        (a, b) => new Date(a).getTime() - new Date(b).getTime()
+    );
+
+    sortedDates.forEach((date) => {
+        const dateEntry = entriesByDate.get(date)!;
+
+        // Finalize entries: calculate totalValue for the day
+        dateEntry.totalValue = dateEntry.entries.reduce(
+            (sum, entry) => sum + entry.merchandiseValue,
+            0
+        );
+
+        // Finalize sales:
+        // 1. Set "Nr crt" for each aggregated sale.
+        // 2. Calculate merchandiseValue (total) for each aggregated sale.
+        // 3. Calculate totalSales for the day.
+        dateEntry.sales.forEach((sale, index) => {
+            sale["Nr crt"] = index + 1;
+            sale.merchandiseValue = sale.cashValue + sale.cardValue;
         });
+        dateEntry.totalSales = dateEntry.sales.reduce(
+            (sum, sale) => sum + sale.merchandiseValue,
+            0
+        );
+
+        // Calculate balances for the day
+        dateEntry.initialValue = runningBalance;
+        dateEntry.finalValue =
+            dateEntry.initialValue +
+            dateEntry.totalValue -
+            dateEntry.totalSales;
+        runningBalance = dateEntry.finalValue;
+
+        result.push(dateEntry);
+    });
 
     return result;
 }
