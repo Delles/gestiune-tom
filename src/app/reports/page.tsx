@@ -69,7 +69,7 @@ export default function ViewReportsPage() {
 
     return (
         <div className="min-h-screen bg-background py-8 px-4">
-            <div className="container max-w-4xl mx-auto">
+            <div className="container max-w-7xl mx-auto">
                 <Card className="mb-8">
                     <CardHeader>
                         <CardTitle className="text-2xl md:text-3xl text-center text-primary">
@@ -154,7 +154,7 @@ export default function ViewReportsPage() {
                 {processedData && (
                     <DataVisualization
                         data={processedData}
-                        companyName={companyName}
+                        initialStockValue={Number(initialValue) || 0}
                     />
                 )}
             </div>
