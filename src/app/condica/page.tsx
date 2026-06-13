@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { CSSProperties, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { ArrowLeft, CalendarPlus, Printer } from "lucide-react";
 
@@ -99,6 +99,51 @@ const getWorkingRows = (settings: CondicaSettings): CondicaRow[] => {
     }
 
     return rows;
+};
+
+const getPrintMetrics = (rowCount: number) => {
+    if (rowCount >= 26) {
+        return {
+            padding: "6mm",
+            headerLineHeight: "4.3mm",
+            headerFontSize: "9pt",
+            titleFontSize: "14pt",
+            monthFontSize: "9pt",
+            tableFontSize: "8.4pt",
+            tableHeaderPadding: "1.3mm",
+            rowHeight: "6.1mm",
+            footerMargin: "3mm",
+            footerFontSize: "9.5pt",
+        };
+    }
+
+    if (rowCount >= 23) {
+        return {
+            padding: "7mm",
+            headerLineHeight: "4.8mm",
+            headerFontSize: "9.5pt",
+            titleFontSize: "15pt",
+            monthFontSize: "9.5pt",
+            tableFontSize: "9pt",
+            tableHeaderPadding: "1.6mm",
+            rowHeight: "6.8mm",
+            footerMargin: "4mm",
+            footerFontSize: "10pt",
+        };
+    }
+
+    return {
+        padding: "9mm",
+        headerLineHeight: "5.4mm",
+        headerFontSize: "10pt",
+        titleFontSize: "16pt",
+        monthFontSize: "10pt",
+        tableFontSize: "9.5pt",
+        tableHeaderPadding: "2mm",
+        rowHeight: "7.8mm",
+        footerMargin: "5mm",
+        footerFontSize: "11pt",
+    };
 };
 
 export default function CondicaPage() {
@@ -426,8 +471,62 @@ export default function CondicaPage() {
                 }
 
                 @media print {
+                    html,
+                    body {
+                        height: 297mm;
+                        width: 210mm;
+                    }
+
                     body {
                         background: white;
+                    }
+
+                    .condica-print {
+                        box-sizing: border-box;
+                        height: 297mm;
+                        overflow: hidden;
+                        padding: var(--condica-print-padding);
+                    }
+
+                    .condica-company-lines {
+                        font-size: var(--condica-header-font-size);
+                        line-height: var(--condica-header-line-height);
+                    }
+
+                    .condica-title {
+                        font-size: var(--condica-title-font-size);
+                        line-height: 1.05;
+                    }
+
+                    .condica-month {
+                        font-size: var(--condica-month-font-size);
+                        line-height: 1.1;
+                    }
+
+                    .condica-table {
+                        font-size: var(--condica-table-font-size);
+                    }
+
+                    .condica-table th {
+                        padding-bottom: var(--condica-table-header-padding);
+                        padding-top: var(--condica-table-header-padding);
+                    }
+
+                    .condica-table th,
+                    .condica-table td {
+                        line-height: 1.05;
+                        overflow: hidden;
+                        text-overflow: ellipsis;
+                        white-space: nowrap;
+                    }
+
+                    .condica-table tbody tr {
+                        height: var(--condica-row-height);
+                    }
+
+                    .condica-footer {
+                        font-size: var(--condica-footer-font-size);
+                        margin-top: var(--condica-footer-margin);
                     }
                 }
             `}</style>
@@ -444,9 +543,26 @@ function CondicaPrint({
     settings: CondicaSettings;
     monthLabel: string;
 }) {
+    const printMetrics = getPrintMetrics(rows.length);
+    const printStyle = {
+        "--condica-print-padding": printMetrics.padding,
+        "--condica-header-line-height": printMetrics.headerLineHeight,
+        "--condica-header-font-size": printMetrics.headerFontSize,
+        "--condica-title-font-size": printMetrics.titleFontSize,
+        "--condica-month-font-size": printMetrics.monthFontSize,
+        "--condica-table-font-size": printMetrics.tableFontSize,
+        "--condica-table-header-padding": printMetrics.tableHeaderPadding,
+        "--condica-row-height": printMetrics.rowHeight,
+        "--condica-footer-margin": printMetrics.footerMargin,
+        "--condica-footer-font-size": printMetrics.footerFontSize,
+    } as CSSProperties;
+
     return (
-        <section className="condica-print mx-auto min-w-[760px] max-w-[820px] bg-white p-4 text-black print:min-w-0 print:max-w-none print:p-[10mm]">
-            <div className="mb-2 max-w-[500px] text-sm leading-6 print:text-[11pt]">
+        <section
+            className="condica-print mx-auto min-w-[760px] max-w-[820px] bg-white p-4 text-black print:min-w-0 print:max-w-none"
+            style={printStyle}
+        >
+            <div className="condica-company-lines mb-2 max-w-[500px] text-sm leading-6">
                 <PrintableLine label="Societatea" value={settings.companyName} />
                 <PrintableLine label="Sediu" value={settings.headquarters} />
                 <PrintableLine label="Nr. ORC" value={settings.orc} />
@@ -456,14 +572,14 @@ function CondicaPrint({
                 />
             </div>
 
-            <h2 className="mb-1 text-center text-xl font-bold uppercase print:text-[16pt]">
+            <h2 className="condica-title mb-1 text-center text-xl font-bold uppercase">
                 Condica de prezenta zilnica
             </h2>
-            <p className="mb-2 text-center text-sm font-medium capitalize print:text-[10pt]">
+            <p className="condica-month mb-2 text-center text-sm font-medium capitalize">
                 {monthLabel}
             </p>
 
-            <table className="w-full border-collapse text-center text-sm print:text-[9.5pt]">
+            <table className="condica-table w-full border-collapse text-center text-sm">
                 <thead>
                     <tr>
                         <th className="w-[44px] border-2 border-black px-1 py-2" rowSpan={2}>
@@ -500,7 +616,7 @@ function CondicaPrint({
                 </thead>
                 <tbody>
                     {rows.map((row) => (
-                        <tr key={`${row.number}-${row.dateLabel}`} className="h-9 print:h-[8mm]">
+                        <tr key={`${row.number}-${row.dateLabel}`} className="h-9">
                             <td className="border-2 border-black px-1">
                                 {row.number}
                             </td>
@@ -530,7 +646,7 @@ function CondicaPrint({
                 </tbody>
             </table>
 
-            <div className="mt-5 flex items-end gap-3 text-sm font-bold print:mt-4 print:text-[11pt]">
+            <div className="condica-footer mt-5 flex items-end gap-3 text-sm font-bold">
                 <span>Administrator/Responsabil Resurse Umane,</span>
                 <span className="min-w-[220px] border-b border-dotted border-black px-2 text-center font-normal">
                     {settings.responsibleName}
