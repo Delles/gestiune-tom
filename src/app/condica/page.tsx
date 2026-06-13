@@ -23,6 +23,8 @@ type CondicaSettings = {
     startNumber: number;
     arrivalTime: string;
     departureTime: string;
+    saturdayArrivalTime: string;
+    saturdayDepartureTime: string;
     includeSaturdays: boolean;
     responsibleName: string;
 };
@@ -31,6 +33,7 @@ type CondicaRow = {
     number: number;
     date: Date;
     dateLabel: string;
+    isSaturday: boolean;
 };
 
 const storageKey = "condica-settings";
@@ -53,6 +56,8 @@ const defaultSettings: CondicaSettings = {
     startNumber: 1,
     arrivalTime: "08:00",
     departureTime: "16:00",
+    saturdayArrivalTime: "08:00",
+    saturdayDepartureTime: "16:00",
     includeSaturdays: false,
     responsibleName: "",
 };
@@ -95,6 +100,7 @@ const getWorkingRows = (settings: CondicaSettings): CondicaRow[] => {
                 month: "2-digit",
                 year: "numeric",
             }),
+            isSaturday,
         });
     }
 
@@ -197,6 +203,19 @@ export default function CondicaPage() {
         setSettings((currentSettings) => ({
             ...currentSettings,
             [key]: value,
+        }));
+    };
+
+    const toggleSaturdays = () => {
+        setSettings((currentSettings) => ({
+            ...currentSettings,
+            includeSaturdays: !currentSettings.includeSaturdays,
+            saturdayArrivalTime: currentSettings.includeSaturdays
+                ? currentSettings.saturdayArrivalTime
+                : currentSettings.arrivalTime,
+            saturdayDepartureTime: currentSettings.includeSaturdays
+                ? currentSettings.saturdayDepartureTime
+                : currentSettings.departureTime,
         }));
     };
 
@@ -393,12 +412,7 @@ export default function CondicaPage() {
 
                             <button
                                 type="button"
-                                onClick={() =>
-                                    updateSetting(
-                                        "includeSaturdays",
-                                        !settings.includeSaturdays
-                                    )
-                                }
+                                onClick={toggleSaturdays}
                                 className="flex w-full items-center justify-between rounded-md border border-input px-3 py-2 text-left text-sm transition-colors hover:bg-accent"
                                 aria-pressed={settings.includeSaturdays}
                             >
@@ -410,6 +424,48 @@ export default function CondicaPage() {
                                     {settings.includeSaturdays ? "Da" : "Nu"}
                                 </span>
                             </button>
+
+                            {settings.includeSaturdays && (
+                                <div className="grid grid-cols-2 gap-3 rounded-md border bg-muted/30 p-3">
+                                    <div className="col-span-2 text-sm font-medium">
+                                        Program sambata
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="saturdayArrivalTime">
+                                            Ora venire
+                                        </Label>
+                                        <Input
+                                            id="saturdayArrivalTime"
+                                            type="time"
+                                            value={settings.saturdayArrivalTime}
+                                            onChange={(event) =>
+                                                updateSetting(
+                                                    "saturdayArrivalTime",
+                                                    event.target.value
+                                                )
+                                            }
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="saturdayDepartureTime">
+                                            Ora plecare
+                                        </Label>
+                                        <Input
+                                            id="saturdayDepartureTime"
+                                            type="time"
+                                            value={
+                                                settings.saturdayDepartureTime
+                                            }
+                                            onChange={(event) =>
+                                                updateSetting(
+                                                    "saturdayDepartureTime",
+                                                    event.target.value
+                                                )
+                                            }
+                                        />
+                                    </div>
+                                </div>
+                            )}
 
                             <div className="rounded-md border bg-muted/40 p-3 text-sm">
                                 <div className="font-medium">
@@ -616,7 +672,10 @@ function CondicaPrint({
                 </thead>
                 <tbody>
                     {rows.map((row) => (
-                        <tr key={`${row.number}-${row.dateLabel}`} className="h-9">
+                        <tr
+                            key={`${row.number}-${row.dateLabel}`}
+                            className="h-9"
+                        >
                             <td className="border-2 border-black px-1">
                                 {row.number}
                             </td>
@@ -628,11 +687,15 @@ function CondicaPrint({
                             </td>
                             <td className="border-2 border-black" />
                             <td className="border-2 border-black px-1">
-                                {settings.arrivalTime}
+                                {row.isSaturday
+                                    ? settings.saturdayArrivalTime
+                                    : settings.arrivalTime}
                             </td>
                             <td className="border-2 border-black" />
                             <td className="border-2 border-black px-1">
-                                {settings.departureTime}
+                                {row.isSaturday
+                                    ? settings.saturdayDepartureTime
+                                    : settings.departureTime}
                             </td>
                         </tr>
                     ))}
