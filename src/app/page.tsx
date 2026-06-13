@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { PlusCircle, ListTodo, Zap } from "lucide-react";
+import { ClipboardPenLine, PlusCircle, ListTodo, Zap } from "lucide-react";
 
 const buttons = [
     {
@@ -24,6 +24,12 @@ const buttons = [
         color: "destructive",
         route: "/automate-report",
     },
+    {
+        icon: ClipboardPenLine,
+        text: "Condica",
+        color: "outline",
+        route: "/condica",
+    },
 ] as const;
 
 export default function HomePage() {
@@ -41,7 +47,7 @@ export default function HomePage() {
                         </p>
                     </CardHeader>
                     <CardContent className="p-0 md:p-2 mt-4">
-                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                             {buttons.map((item, index) => (
                                 <Button
                                     key={index}
