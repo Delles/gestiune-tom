@@ -257,6 +257,11 @@ async function processSalesFile(file: File): Promise<ExtractedEntry[]> {
             const valoareStr = row[headerMap["Valoare"]] as string | number;
             const tipValueRaw = row[headerMap["Tip"]]; // Read the Tip column
             const clientValueRaw = row[headerMap["Client"]]; // Read the Client column
+            const facturaColumnIndex = headerMap["Factura"];
+            const facturaValueRaw =
+                typeof facturaColumnIndex === "number"
+                    ? row[facturaColumnIndex]
+                    : undefined;
 
             // Parse and validate date
             const parsedDate = parseDate(dateStr as string);
@@ -290,11 +295,33 @@ async function processSalesFile(file: File): Promise<ExtractedEntry[]> {
             let isValidSale = false;
 
             // Determine entry type and extract details
-            const incasareStr = String(incasareRaw || "");
+            const incasareStr = String(incasareRaw ?? "");
             const explicatieLower = explicatie.toLowerCase();
-            const tipValueLower = String(tipValueRaw || "").toLowerCase(); // Process Tip value
+            const tipValueLower = String(tipValueRaw ?? "")
+                .trim()
+                .toLowerCase(); // Process Tip value
+            const facturaNumber = String(facturaValueRaw ?? "").trim();
 
-            if (
+            if (facturaNumber) {
+                const clientName = String(clientValueRaw ?? "").trim();
+
+                if (tipValueLower === "chitanta") {
+                    documentNumber = incasareStr;
+                    updatedExplanation = `Chitanta ${clientName}`.trim();
+                    cashValue = valoare;
+                    isValidSale = true;
+                } else if (tipValueLower === "card") {
+                    documentNumber = incasareStr;
+                    updatedExplanation = [
+                        `Factura ${facturaNumber}`,
+                        clientName,
+                    ]
+                        .filter(Boolean)
+                        .join(" - ");
+                    cardValue = valoare;
+                    isValidSale = true;
+                }
+            } else if (
                 explicatieLower.includes("numerar") ||
                 explicatieLower.includes("pos") ||
                 explicatieLower.includes("card")
