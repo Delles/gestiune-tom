@@ -11,6 +11,7 @@ import {
     DialogTitle,
 } from "@/components/ui/dialog";
 import { ReportCard } from "@/components/ReportCard";
+import { ImportSummary } from "@/components/ImportSummary";
 
 interface ReportsSectionProps {
     data: ExtractedExcelData;
@@ -26,6 +27,11 @@ export function ReportsSection({ data, companyName }: ReportsSectionProps) {
         action: "save" | "preview"
     ) => {
         try {
+            if (action === "save" && data.validation?.canExport === false) {
+                setDialogMessage("Rapoartele sunt incomplete. Rezolvați erorile importului înainte de salvare.");
+                setDialogOpen(true);
+                return;
+            }
             if (!companyName) {
                 setDialogMessage("Vă rugăm să introduceți numele companiei.");
                 setDialogOpen(true);
@@ -96,12 +102,14 @@ export function ReportsSection({ data, companyName }: ReportsSectionProps) {
 
     return (
         <div className="space-y-4">
+            <ImportSummary validation={data.validation} />
             {data.processedEntries.map(
                 (entry: ProcessedEntry, index: number) => (
                     <ReportCard
                         key={index}
                         entry={entry}
                         onGenerateReport={handleGenerateReport}
+                        saveDisabled={data.validation?.canExport === false}
                     />
                 )
             )}

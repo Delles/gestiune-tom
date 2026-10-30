@@ -38,6 +38,35 @@ export interface ExtractedExcelData {
     entries: ExtractedEntry[];
     sales: ExtractedEntry[];
     processedEntries: ProcessedEntry[];
+    validation?: ImportValidation;
+}
+
+export interface ImportIssue {
+    severity: "info" | "warning" | "error";
+    code: string;
+    fileName: string;
+    sheetName?: string;
+    row?: number;
+    message: string;
+    originalValue?: string;
+}
+
+export interface ImportFileCheck {
+    fileName: string;
+    sheetName: string;
+    kind: "entries" | "sales";
+    importedRows: number;
+    excludedRows: number;
+    importedTotal: number;
+    sourceTotal?: number;
+    totalsMatch?: boolean;
+    period?: { start: string; end: string };
+}
+
+export interface ImportValidation {
+    canExport: boolean;
+    issues: ImportIssue[];
+    files: ImportFileCheck[];
 }
 
 export interface ReportData {

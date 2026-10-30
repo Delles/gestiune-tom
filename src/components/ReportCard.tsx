@@ -15,6 +15,7 @@ import { EntryItem, SaleItem } from "@/types/reportTypes";
 
 interface ReportCardProps {
     entry: ProcessedEntry;
+    saveDisabled?: boolean;
     onGenerateReport: (
         entry: ProcessedEntry,
         action: "save" | "preview"
@@ -54,7 +55,7 @@ const salesColumns: Column<SaleItem>[] = [
     },
 ];
 
-export function ReportCard({ entry, onGenerateReport }: ReportCardProps) {
+export function ReportCard({ entry, onGenerateReport, saveDisabled = false }: ReportCardProps) {
     return (
         <Collapsible className="mb-6">
             <Card className="border-0 shadow-sm hover:shadow-md transition-shadow duration-200">
@@ -137,6 +138,8 @@ export function ReportCard({ entry, onGenerateReport }: ReportCardProps) {
                         <div className="flex flex-col sm:flex-row gap-4 pt-6 border-t">
                             <Button
                                 onClick={() => onGenerateReport(entry, "save")}
+                                disabled={saveDisabled}
+                                title={saveDisabled ? "Rezolvați erorile importului înainte de salvare." : undefined}
                                 className="w-full sm:w-auto bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 transition-all duration-200"
                             >
                                 Salvează Raportul

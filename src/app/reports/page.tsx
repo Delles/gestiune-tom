@@ -16,6 +16,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { extractDataFromExcel } from "@/lib/excelExtractor";
 import { ExtractedExcelData } from "@/types/reportTypes";
 import DataVisualization from "@/components/DataVisualization";
+import { ImportSummary } from "@/components/ImportSummary";
 
 export default function ViewReportsPage() {
     const [companyName, setCompanyName] = useState("");
@@ -33,6 +34,7 @@ export default function ViewReportsPage() {
     ) => {
         const file = e.target.files?.[0] || null;
         setFile(file);
+        setProcessedData(null);
         setError(null);
     };
 
@@ -43,6 +45,7 @@ export default function ViewReportsPage() {
         }
 
         setError(null);
+        setProcessedData(null);
         setIsProcessing(true);
 
         try {
@@ -55,7 +58,7 @@ export default function ViewReportsPage() {
         } catch (error) {
             console.error("Error processing files:", error);
             setError(
-                "An error occurred while processing the files. Please try again."
+                error instanceof Error ? error.message : "A apărut o eroare la procesarea fișierelor."
             );
         } finally {
             setIsProcessing(false);
@@ -87,6 +90,7 @@ export default function ViewReportsPage() {
                             <Input
                                 id="companyName"
                                 value={companyName}
+                                disabled={isProcessing}
                                 onChange={(e) => setCompanyName(e.target.value)}
                                 placeholder="Introduceți numele companiei"
                             />
@@ -98,13 +102,15 @@ export default function ViewReportsPage() {
                                 id="initialValue"
                                 type="number"
                                 value={initialValue}
-                                onChange={(e) =>
+                                disabled={isProcessing}
+                                onChange={(e) => {
+                                    setProcessedData(null);
                                     setInitialValue(
                                         e.target.value === ""
                                             ? ""
                                             : Number(e.target.value)
-                                    )
-                                }
+                                    );
+                                }}
                                 placeholder="0.00"
                             />
                         </div>
@@ -114,6 +120,7 @@ export default function ViewReportsPage() {
                                 id="entriesFile"
                                 label="Document Intrări"
                                 file={entriesFile}
+                                disabled={isProcessing}
                                 onChange={(e) =>
                                     handleFileChange(e, setEntriesFile)
                                 }
@@ -122,6 +129,7 @@ export default function ViewReportsPage() {
                                 id="salesFile"
                                 label="Document Vânzări"
                                 file={salesFile}
+                                disabled={isProcessing}
                                 onChange={(e) =>
                                     handleFileChange(e, setSalesFile)
                                 }
@@ -152,10 +160,13 @@ export default function ViewReportsPage() {
                 </Card>
 
                 {processedData && (
-                    <DataVisualization
-                        data={processedData}
-                        initialStockValue={Number(initialValue) || 0}
-                    />
+                    <>
+                        <ImportSummary validation={processedData.validation} />
+                        <DataVisualization
+                            data={processedData}
+                            initialStockValue={Number(initialValue) || 0}
+                        />
+                    </>
                 )}
             </div>
         </div>
@@ -167,9 +178,10 @@ interface FileUploadProps {
     label: string;
     file: File | null;
     onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+    disabled?: boolean;
 }
 
-function FileUpload({ id, label, file, onChange }: FileUploadProps) {
+function FileUpload({ id, label, file, onChange, disabled }: FileUploadProps) {
     return (
         <div className="space-y-2">
             <Label htmlFor={id}>{label}</Label>
@@ -180,11 +192,13 @@ function FileUpload({ id, label, file, onChange }: FileUploadProps) {
                     className="hidden"
                     accept=".xlsx,.xls"
                     onChange={onChange}
+                    disabled={disabled}
                 />
                 <Button
                     variant="outline"
                     className="w-full text-left flex justify-between items-center"
                     onClick={() => document.getElementById(id)?.click()}
+                    disabled={disabled}
                 >
                     <span className="truncate">
                         {file ? file.name : "Încarcă document"}

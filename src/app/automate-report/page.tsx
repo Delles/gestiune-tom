@@ -25,9 +25,10 @@ interface FileUploadProps {
     label: string;
     file: File | null;
     onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+    disabled?: boolean;
 }
 
-function FileUpload({ id, label, file, onChange }: FileUploadProps) {
+function FileUpload({ id, label, file, onChange, disabled }: FileUploadProps) {
     return (
         <div className="space-y-2">
             <Label htmlFor={id}>{label}</Label>
@@ -38,11 +39,13 @@ function FileUpload({ id, label, file, onChange }: FileUploadProps) {
                     className="hidden"
                     accept=".xlsx,.xls"
                     onChange={onChange}
+                    disabled={disabled}
                 />
                 <Button
                     variant="outline"
                     className="w-full text-left flex justify-between items-center"
                     onClick={() => document.getElementById(id)?.click()}
+                    disabled={disabled}
                 >
                     <span className="truncate">
                         {file ? file.name : "Încarcă document"}
@@ -73,6 +76,7 @@ export default function AutomateReportPage() {
         }
 
         try {
+            setProcessedData(null);
             setIsGenerating(true);
             const extractedData = await extractDataFromExcel(
                 entriesFile,
@@ -82,7 +86,7 @@ export default function AutomateReportPage() {
             setProcessedData(extractedData);
         } catch (error) {
             console.error(error);
-            setDialogMessage("A apărut o eroare la procesarea fișierelor.");
+            setDialogMessage(error instanceof Error ? error.message : "A apărut o eroare la procesarea fișierelor.");
             setDialogOpen(true);
         } finally {
             setIsGenerating(false);
@@ -90,26 +94,20 @@ export default function AutomateReportPage() {
     };
 
     const handleGenerateReports = async () => {
-        if (!entriesFile && !salesFile) {
-            alert("Please upload at least one file");
-
+        if (!processedData || processedData.validation?.canExport === false) {
+            setDialogMessage("Procesați fișierele și rezolvați erorile importului înainte de salvare.");
+            setDialogOpen(true);
             return;
         }
 
         try {
             setIsGenerating(true);
 
-            const extractedData = await extractDataFromExcel(
-                entriesFile,
-                salesFile,
-                initialValue === "" ? 0 : initialValue
-            );
-
             // Create a new ZIP file
             const zip = new JSZip();
 
             // Generate PDF for each processed entry
-            for (const entry of extractedData.processedEntries) {
+            for (const entry of processedData.processedEntries) {
                 const reportData = convertProcessedEntryToReportData(
                     entry,
                     companyName
@@ -177,6 +175,7 @@ export default function AutomateReportPage() {
                             <Input
                                 id="companyName"
                                 value={companyName}
+                                disabled={isGenerating}
                                 onChange={(e) => setCompanyName(e.target.value)}
                                 placeholder="Introduceți numele companiei"
                             />
@@ -188,13 +187,15 @@ export default function AutomateReportPage() {
                                 id="initialValue"
                                 type="number"
                                 value={initialValue}
-                                onChange={(e) =>
+                                disabled={isGenerating}
+                                onChange={(e) => {
+                                    setProcessedData(null);
                                     setInitialValue(
                                         e.target.value === ""
                                             ? ""
                                             : Number(e.target.value)
-                                    )
-                                }
+                                    );
+                                }}
                                 placeholder="0.00"
                             />
                         </div>
@@ -204,18 +205,22 @@ export default function AutomateReportPage() {
                                 id="entriesFile"
                                 label="Document Intrări"
                                 file={entriesFile}
-                                onChange={(e) =>
-                                    setEntriesFile(e.target.files?.[0] || null)
-                                }
+                                disabled={isGenerating}
+                                onChange={(e) => {
+                                    setProcessedData(null);
+                                    setEntriesFile(e.target.files?.[0] || null);
+                                }}
                             />
 
                             <FileUpload
                                 id="salesFile"
                                 label="Document Vânzări"
                                 file={salesFile}
-                                onChange={(e) =>
-                                    setSalesFile(e.target.files?.[0] || null)
-                                }
+                                disabled={isGenerating}
+                                onChange={(e) => {
+                                    setProcessedData(null);
+                                    setSalesFile(e.target.files?.[0] || null);
+                                }}
                             />
                         </div>
 
@@ -260,7 +265,7 @@ export default function AutomateReportPage() {
                     <Button
                         className="w-full"
                         onClick={handleGenerateReports}
-                        disabled={isGenerating}
+                        disabled={isGenerating || processedData.validation?.canExport === false}
                     >
                         <Download className="mr-2 h-4 w-4" />
                         {isGenerating
